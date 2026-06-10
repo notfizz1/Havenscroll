@@ -170,7 +170,8 @@
     .podcast-show-item { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; }
     .podcast-show-header { padding: 1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: background 0.2s; }
     .podcast-show-header:hover { background: rgba(255, 255, 255, 0.05); }
-    .podcast-thumb { width: 50px; height: 50px; border-radius: 6px; background: linear-gradient(135deg, var(--accent-sage), var(--accent-indigo)); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .podcast-thumb { width: 50px; height: 50px; border-radius: 6px; background: linear-gradient(135deg, var(--accent-sage), var(--accent-indigo)); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; overflow: hidden; flex-shrink: 0; }
+    .podcast-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
     .podcast-info { flex-grow: 1; }
     .podcast-title { font-weight: 700; font-size: 0.9rem; color: #FFF; }
     .podcast-author { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; }
@@ -408,7 +409,7 @@
       <div class="oasis-drawer" id="drawer-podcasts">
         <button class="drawer-trigger" onclick="toggleDrawer('drawer-podcasts')"><span>🎙️ Podcasts (Offline)</span><span class="drawer-arrow">▶</span></button>
         <div class="drawer-content">
-          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">Select an episode to download or play. Files are saved directly to your local PWA storage.</p>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">Select an episode to play or share.</p>
           <div id="podcast-container">
             <!-- Rendered by JS -->
           </div>
@@ -651,6 +652,7 @@
     id: "pod_latest",
     title: "Huberman Lab - Senaste Avsnitten",
     author: "Dr. Andrew Huberman",
+    image: "https://megaphone.imgix.net/podcasts/2d042ec8-5fd0-11f1-a583-d34f98bf1200/image/c939ff80ce31857dd7c3855498b342f4.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress",
     episodes: [
       { 
         id: "latest_1", 
@@ -917,7 +919,7 @@
                 <div class="ep-meta">${ep.duration}</div>
               </div>
               <div class="ep-actions">
-                <button class="ep-btn" onclick="playAudioTrack('${ep.url}', '${ep.title.replace(/'/g, "\\'")}', '${show.title.replace(/'/g, "\\'")}')" title="Play">▶</button>
+                <button class="ep-btn" onclick="playAudioTrack('${ep.url}', '${ep.title.replace(/'/g, "\\'")}', '${show.title.replace(/'/g, "\\'")}', '${(show.image || '').replace(/'/g, "\\'")}')" title="Play">▶</button>
                 <button class="ep-btn" onclick="downloadPodcast('${ep.url}', '${ep.title.replace(/'/g, "\\'")}')" title="Download / Share Offline">↓</button>
               </div>
             </div>
@@ -926,7 +928,7 @@
 
         showDiv.innerHTML = `
           <div class="podcast-show-header" onclick="this.parentElement.classList.toggle('open'); triggerHaptic('tick');">
-            <div class="podcast-thumb">🎙️</div>
+            <div class="podcast-thumb">${show.image ? `<img src="${show.image}" alt="${show.title}" onerror="this.parentElement.innerHTML='🎙️'">` : '🎙️'}</div>
             <div class="podcast-info">
               <div class="podcast-title">${show.title}</div>
               <div class="podcast-author">${show.author}</div>
@@ -1028,9 +1030,16 @@
       triggerHaptic('tick');
     }
 
-    function playAudioTrack(url, title, author) {
+    function playAudioTrack(url, title, author, image) {
       document.getElementById('player-title').innerText = title;
       document.getElementById('player-author').innerText = author;
+      // Update player thumb
+      const thumb = document.querySelector('#global-audio-player .player-thumb');
+      if (thumb) {
+        thumb.innerHTML = image
+          ? `<img src="${image}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;" onerror="this.parentElement.innerHTML='🎙️'">`
+          : '🎙️';
+      }
       // Reset state
       scrubber.value = 0;
       updateScrubberBackground(0);
