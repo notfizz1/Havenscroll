@@ -267,18 +267,53 @@
 
     /* GLOBAL AUDIO PLAYER */
     #global-audio-player {
-      position: absolute; bottom: 68px; left: 0; width: 100%; background: rgba(16, 21, 31, 0.98);
-      border-top: 1px solid rgba(255,255,255,0.05); padding: 0.75rem 1rem; display: none; 
-      align-items: center; gap: 1rem; z-index: 9; backdrop-filter: blur(10px);
-      box-shadow: 0 -10px 20px rgba(0,0,0,0.3);
+      position: absolute; bottom: 68px; left: 0; width: 100%;
+      background: linear-gradient(to top, rgba(10,14,23,0.99), rgba(16,21,31,0.98));
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding: 0.9rem 1.1rem 0.85rem 1.1rem;
+      display: none; flex-direction: column; gap: 0.6rem;
+      z-index: 9; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 -12px 30px rgba(0,0,0,0.5);
     }
+    .player-top-row { display: flex; align-items: center; gap: 0.75rem; }
+    .player-thumb { width: 38px; height: 38px; border-radius: 8px; background: linear-gradient(135deg, var(--accent-sage), var(--accent-indigo)); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
     .player-info { flex-grow: 1; overflow: hidden; }
-    .player-title { font-size: 0.75rem; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; color: var(--text-primary); }
-    .player-sub { font-size: 0.65rem; color: var(--text-muted); margin-top: 0.1rem; }
-    .player-controls { display: flex; gap: 0.75rem; align-items: center; }
-    .play-pause-btn { background: var(--accent-gold); color: var(--bg-midnight); border: none; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+    .player-title { font-size: 0.76rem; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; color: var(--text-primary); }
+    .player-sub { font-size: 0.62rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .close-player-btn { background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; padding: 0.2rem; flex-shrink: 0; line-height: 1; transition: color 0.2s; }
+    .close-player-btn:hover { color: var(--text-primary); }
+
+    /* Progress / Scrubber */
+    .player-progress-row { display: flex; align-items: center; gap: 0.6rem; }
+    .player-time { font-size: 0.6rem; color: var(--text-muted); font-weight: 600; min-width: 30px; font-variant-numeric: tabular-nums; }
+    .player-time.right { text-align: right; }
+    .player-scrubber {
+      flex-grow: 1; -webkit-appearance: none; appearance: none;
+      height: 3px; border-radius: 9999px; cursor: pointer; outline: none;
+      background: rgba(255,255,255,0.1);
+    }
+    .player-scrubber::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px;
+      border-radius: 50%; background: var(--accent-gold);
+      cursor: pointer; box-shadow: 0 0 6px rgba(255,183,77,0.5);
+      transition: transform 0.15s;
+    }
+    .player-scrubber:active::-webkit-slider-thumb { transform: scale(1.3); }
+    .player-scrubber::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--accent-gold); border: none; cursor: pointer;
+    }
+
+    /* Controls row */
+    .player-controls-row { display: flex; align-items: center; justify-content: center; gap: 1.1rem; }
+    .player-skip-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.25rem; transition: color 0.2s; }
+    .player-skip-btn:active { transform: scale(0.9); color: var(--text-primary); }
+    .player-skip-btn svg { width: 22px; height: 22px; }
+    .player-skip-btn span { font-size: 0.5rem; letter-spacing: 0.05em; font-weight: 700; }
+    .play-pause-btn { background: var(--accent-gold); color: var(--bg-midnight); border: none; border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0; font-size: 1rem; }
     .play-pause-btn:active { transform: scale(0.9); }
-    .close-player-btn { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; }
+    .player-speed-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 6px; padding: 0.3rem 0.5rem; font-size: 0.65rem; font-weight: 800; cursor: pointer; transition: all 0.2s; min-width: 36px; text-align: center; }
+    .player-speed-btn:active { background: rgba(255,183,77,0.12); border-color: var(--accent-gold); color: var(--accent-gold); }
 
     @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); } 40% { transform: translateX(-50%) translateY(-6px); } 60% { transform: translateX(-50%) translateY(-3px); } }
     @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
@@ -437,14 +472,61 @@
 
     <!-- GLOBAL AUDIO PLAYER (Slides up when podcast plays) -->
     <div id="global-audio-player">
-      <div class="player-info">
-        <div class="player-title" id="player-title">Episode Title</div>
-        <div class="player-sub" id="player-author">Podcast Name</div>
-      </div>
-      <div class="player-controls">
-        <button class="play-pause-btn" id="player-play-btn" onclick="togglePodcastPlay()">❚❚</button>
+
+      <!-- Row 1: Thumb + Title + Close -->
+      <div class="player-top-row">
+        <div class="player-thumb">🎙️</div>
+        <div class="player-info">
+          <div class="player-title" id="player-title">Episode Title</div>
+          <div class="player-sub" id="player-author">Podcast Name</div>
+        </div>
         <button class="close-player-btn" onclick="closePodcastPlayer()">×</button>
       </div>
+
+      <!-- Row 2: Scrubber + timestamps -->
+      <div class="player-progress-row">
+        <span class="player-time" id="player-current">0:00</span>
+        <input type="range" class="player-scrubber" id="player-scrubber"
+               min="0" max="100" value="0" step="0.1"
+               oninput="onScrubberInput(this.value)"
+               onchange="onScrubberChange(this.value)">
+        <span class="player-time right" id="player-duration">0:00</span>
+      </div>
+
+      <!-- Row 3: Skip back / Play / Skip forward / Speed -->
+      <div class="player-controls-row">
+        <button class="player-skip-btn" onclick="skipPodcast(-30)" title="Back 30s">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 .49-4.95"></path>
+          </svg>
+          <span>30s</span>
+        </button>
+        <button class="player-skip-btn" onclick="skipPodcast(-10)" title="Back 10s">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 .49-4.95"></path>
+          </svg>
+          <span>10s</span>
+        </button>
+        <button class="play-pause-btn" id="player-play-btn" onclick="togglePodcastPlay()">▶</button>
+        <button class="player-skip-btn" onclick="skipPodcast(10)" title="Forward 10s">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-.49-4.95"></path>
+          </svg>
+          <span>10s</span>
+        </button>
+        <button class="player-skip-btn" onclick="skipPodcast(30)" title="Forward 30s">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-.49-4.95"></path>
+          </svg>
+          <span>30s</span>
+        </button>
+        <button class="player-speed-btn" id="player-speed-btn" onclick="cyclePlaybackSpeed()" title="Playback speed">1×</button>
+      </div>
+
     </div>
 
     <!-- BOTTOM APP NAV BAR -->
@@ -856,27 +938,121 @@
       });
     }
 
+    /* ==========================================================================
+       PODCAST PLAYER — full controls
+       ========================================================================== */
     const nativeAudio = document.getElementById('native-audio');
     const globalPlayer = document.getElementById('global-audio-player');
     const playBtn = document.getElementById('player-play-btn');
+    const scrubber = document.getElementById('player-scrubber');
+    const currentTimeEl = document.getElementById('player-current');
+    const durationEl = document.getElementById('player-duration');
+    const speedBtn = document.getElementById('player-speed-btn');
+
+    const SPEED_STEPS = [1, 1.25, 1.5, 1.75, 2];
+    let currentSpeedIndex = 0;
+    let isScrubbing = false;
+
+    function formatTime(secs) {
+      if (isNaN(secs) || secs < 0) return '0:00';
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = Math.floor(secs % 60);
+      if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      return `${m}:${String(s).padStart(2,'0')}`;
+    }
+
+    function updateScrubberBackground(pct) {
+      scrubber.style.background = `linear-gradient(to right, var(--accent-gold) ${pct}%, rgba(255,255,255,0.1) ${pct}%)`;
+    }
+
+    nativeAudio.addEventListener('timeupdate', () => {
+      if (isScrubbing) return;
+      const pct = nativeAudio.duration ? (nativeAudio.currentTime / nativeAudio.duration) * 100 : 0;
+      scrubber.value = pct;
+      updateScrubberBackground(pct);
+      currentTimeEl.textContent = formatTime(nativeAudio.currentTime);
+    });
+
+    nativeAudio.addEventListener('loadedmetadata', () => {
+      durationEl.textContent = formatTime(nativeAudio.duration);
+    });
+
+    nativeAudio.addEventListener('ended', () => {
+      playBtn.innerHTML = '▶';
+      scrubber.value = 0;
+      updateScrubberBackground(0);
+      currentTimeEl.textContent = '0:00';
+    });
+
+    nativeAudio.addEventListener('play', () => {
+      playBtn.innerHTML = '<span style="letter-spacing:-1px">❚❚</span>';
+    });
+
+    nativeAudio.addEventListener('pause', () => {
+      playBtn.innerHTML = '▶';
+    });
+
+    // While dragging — update visuals but don't seek yet (smoother on iOS)
+    function onScrubberInput(value) {
+      isScrubbing = true;
+      const pct = parseFloat(value);
+      updateScrubberBackground(pct);
+      if (nativeAudio.duration) {
+        currentTimeEl.textContent = formatTime((pct / 100) * nativeAudio.duration);
+      }
+    }
+
+    // On release — actually seek
+    function onScrubberChange(value) {
+      isScrubbing = false;
+      if (nativeAudio.duration) {
+        nativeAudio.currentTime = (parseFloat(value) / 100) * nativeAudio.duration;
+      }
+      triggerHaptic('tick');
+    }
+
+    function skipPodcast(seconds) {
+      nativeAudio.currentTime = Math.max(0, Math.min(nativeAudio.duration || 0, nativeAudio.currentTime + seconds));
+      triggerHaptic('tick');
+    }
+
+    function cyclePlaybackSpeed() {
+      currentSpeedIndex = (currentSpeedIndex + 1) % SPEED_STEPS.length;
+      const speed = SPEED_STEPS[currentSpeedIndex];
+      nativeAudio.playbackRate = speed;
+      speedBtn.textContent = speed === 1 ? '1×' : `${speed}×`;
+      speedBtn.style.color = speed === 1 ? '' : 'var(--accent-gold)';
+      speedBtn.style.borderColor = speed === 1 ? '' : 'var(--accent-gold)';
+      showToast(`Speed: ${speed}×`);
+      triggerHaptic('tick');
+    }
 
     function playAudioTrack(url, title, author) {
       document.getElementById('player-title').innerText = title;
       document.getElementById('player-author').innerText = author;
+      // Reset state
+      scrubber.value = 0;
+      updateScrubberBackground(0);
+      currentTimeEl.textContent = '0:00';
+      durationEl.textContent = '0:00';
+      currentSpeedIndex = 0;
+      nativeAudio.playbackRate = 1;
+      speedBtn.textContent = '1×';
+      speedBtn.style.color = '';
+      speedBtn.style.borderColor = '';
+      // Play
       nativeAudio.src = url;
       nativeAudio.play();
       globalPlayer.style.display = 'flex';
-      playBtn.innerText = '❚❚';
       triggerHaptic('heavy');
     }
 
     function togglePodcastPlay() {
       if (nativeAudio.paused) {
         nativeAudio.play();
-        playBtn.innerText = '❚❚';
       } else {
         nativeAudio.pause();
-        playBtn.innerText = '▶';
       }
       triggerHaptic('tick');
     }
@@ -885,6 +1061,8 @@
       nativeAudio.pause();
       nativeAudio.src = '';
       globalPlayer.style.display = 'none';
+      scrubber.value = 0;
+      updateScrubberBackground(0);
       triggerHaptic('tick');
     }
 
