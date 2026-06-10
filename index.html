@@ -420,7 +420,7 @@
     <div id="toast"><span class="toast-icon">★</span><span id="toast-text">Saved to Pocket Feed</span></div>
 
     <!-- UPDATE AVAILABLE BANNER -->
-    <div id="update-banner" style="display:none; position:absolute; top:0; left:0; right:0; z-index:998; background: linear-gradient(135deg, rgba(129,199,132,0.12), rgba(255,183,77,0.1)); border-bottom: 1px solid rgba(129,199,132,0.3); padding: 0.75rem 1.25rem; display:none; align-items:center; justify-content:space-between; gap:0.75rem; backdrop-filter:blur(8px);">
+    <div id="update-banner" style="position:absolute; top:0; left:0; right:0; z-index:998; background: linear-gradient(135deg, rgba(129,199,132,0.12), rgba(255,183,77,0.1)); border-bottom: 1px solid rgba(129,199,132,0.3); padding: 0.75rem 1.25rem; display:none; align-items:center; justify-content:space-between; gap:0.75rem; backdrop-filter:blur(8px);">
       <div style="display:flex; align-items:center; gap:0.5rem; flex:1;">
         <span style="font-size:1rem;">✨</span>
         <div>
@@ -940,7 +940,7 @@
 
 
     /* ==========================================================================
-       SERVICE WORKER AUTO-UPDATE DETECTION
+       SERVICE WORKER + VERSION-BASED UPDATE DETECTION
        ========================================================================== */
     let pendingUpdateWorker = null;
 
@@ -956,41 +956,74 @@
 
     function applyUpdate() {
       dismissUpdateBanner();
+      showToast("Updating Haven Scroll...");
       if (pendingUpdateWorker) {
-        // Tell the waiting SW to take control, then reload
         pendingUpdateWorker.postMessage({ type: 'SKIP_WAITING' });
         pendingUpdateWorker = null;
       }
-      showToast("Updating Haven Scroll...");
-      setTimeout(() => window.location.reload(), 800);
+      setTimeout(() => window.location.reload(true), 800);
+    }
+
+    // Version polling: fetches version.json from server, compares to stored version.
+    // This works reliably on iOS Safari where SW updatefound events can be delayed.
+    const CURRENT_VERSION_KEY = 'havenscroll_installed_version';
+
+    async function checkForVersionUpdate() {
+      try {
+        const res = await fetch('./version.json?t=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const serverVersion = data.version;
+        const installedVersion = localStorage.getItem(CURRENT_VERSION_KEY);
+
+        if (!installedVersion) {
+          // First time — just store it, no banner
+          localStorage.setItem(CURRENT_VERSION_KEY, serverVersion);
+          return;
+        }
+
+        if (serverVersion !== installedVersion) {
+          // New version on server — show banner
+          showUpdateBanner();
+        }
+      } catch (e) {
+        // version.json not found or network error — silently ignore
+      }
     }
 
     function registerAndWatchSW() {
       if (!('serviceWorker' in navigator)) return;
       navigator.serviceWorker.register('./sw.js').then(reg => {
-        // Case 1: A new SW is already waiting (user had old version cached)
+        // Also listen for SW-based updates (belt and suspenders)
         if (reg.waiting) {
           pendingUpdateWorker = reg.waiting;
           showUpdateBanner();
         }
-        // Case 2: A new SW finishes installing while the app is open
         reg.addEventListener('updatefound', () => {
           const newWorker = reg.installing;
           if (!newWorker) return;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New version ready — there's already an old one controlling the page
               pendingUpdateWorker = newWorker;
               showUpdateBanner();
             }
           });
         });
       }).catch(err => console.log('SW registration failed:', err));
+    }
 
-      // When SW takes control (after SKIP_WAITING), a reload might already be triggered
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        // controllerchange fires after skipWaiting, reload happens in applyUpdate
-      });
+    // When "Update Now" is tapped, also update the stored version
+    const _originalApplyUpdate = applyUpdate;
+    function applyUpdate() {
+      // Clear stored version so it re-reads fresh after reload
+      localStorage.removeItem(CURRENT_VERSION_KEY);
+      dismissUpdateBanner();
+      showToast("Updating Haven Scroll...");
+      if (pendingUpdateWorker) {
+        pendingUpdateWorker.postMessage({ type: 'SKIP_WAITING' });
+        pendingUpdateWorker = null;
+      }
+      setTimeout(() => window.location.reload(true), 800);
     }
     function toggleAmbientStarfield(activate) {
       const overlay = document.getElementById('ambient-starfield-overlay'); isAmbientActive = activate;
@@ -1049,6 +1082,9 @@
       if (touchSurface) { touchSurface.addEventListener('touchstart', handleTouchStart, { passive: true }); touchSurface.addEventListener('touchend', handleTouchEnd, { passive: true }); }
       setTimeout(() => { document.getElementById('splash-screen').classList.add('hidden'); }, 2300);
       registerAndWatchSW();
+      // Check for updates 3 seconds after load (after splash), then every 5 minutes
+      setTimeout(checkForVersionUpdate, 3000);
+      setInterval(checkForVersionUpdate, 5 * 60 * 1000);
     });
   </script>
 </body>
