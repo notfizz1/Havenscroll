@@ -419,6 +419,19 @@
     <!-- TOAST PORTAL -->
     <div id="toast"><span class="toast-icon">★</span><span id="toast-text">Saved to Pocket Feed</span></div>
 
+    <!-- UPDATE AVAILABLE BANNER -->
+    <div id="update-banner" style="display:none; position:absolute; top:0; left:0; right:0; z-index:998; background: linear-gradient(135deg, rgba(129,199,132,0.12), rgba(255,183,77,0.1)); border-bottom: 1px solid rgba(129,199,132,0.3); padding: 0.75rem 1.25rem; display:none; align-items:center; justify-content:space-between; gap:0.75rem; backdrop-filter:blur(8px);">
+      <div style="display:flex; align-items:center; gap:0.5rem; flex:1;">
+        <span style="font-size:1rem;">✨</span>
+        <div>
+          <div style="font-size:0.78rem; font-weight:800; color:#FFF;">New update available!</div>
+          <div style="font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem;">Tap to get the latest features</div>
+        </div>
+      </div>
+      <button onclick="applyUpdate()" style="background:var(--accent-sage); color:#0A0E17; border:none; border-radius:9999px; padding:0.4rem 1rem; font-size:0.72rem; font-weight:800; cursor:pointer; white-space:nowrap; flex-shrink:0;">Update Now</button>
+      <button onclick="dismissUpdateBanner()" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer; padding:0.25rem; flex-shrink:0; line-height:1;">×</button>
+    </div>
+
     <!-- HIDDEN NATIVE AUDIO ELEMENT FOR PODCASTS -->
     <audio id="native-audio" style="display:none;"></audio>
 
@@ -823,7 +836,7 @@
               </div>
               <div class="ep-actions">
                 <button class="ep-btn" onclick="playAudioTrack('${ep.url}', '${ep.title.replace(/'/g, "\\'")}', '${show.title.replace(/'/g, "\\'")}')" title="Play">▶</button>
-                <button class="ep-btn" onclick="downloadPodcast('${ep.url}')" title="Download Offline">↓</button>
+                <button class="ep-btn" onclick="downloadPodcast('${ep.url}', '${ep.title.replace(/'/g, "\\'")}')" title="Download / Share Offline">↓</button>
               </div>
             </div>
           `;
@@ -875,18 +888,110 @@
       triggerHaptic('tick');
     }
 
-    function downloadPodcast(url) {
-      showToast("Triggering secure PWA download...");
+    async function downloadPodcast(url, title) {
       triggerHaptic('wave');
-      // IMPLEMENTATION NOTE FOR GITHUB PWA:
-      // Anropa din IndexedDB funktion här! Exempelvis:
-      // window.appDB.saveAudioBlob(url).then(() => showToast("Nedladdning klar!"));
+      // On iOS Safari, direct downloads of cross-origin audio are not possible via <a download>.
+      // Best approach: use Web Share API (works perfectly on iPhone) or open in new tab as fallback.
+      const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
+      
+      if (isIOS) {
+        // On iPhone: try Web Share first (user can AirDrop, save to Files, etc.)
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: title || 'Podcast Episode', url: url });
+            showToast("Share sheet opened ✓");
+          } catch (e) {
+            // User dismissed share sheet — no problem
+            if (e.name !== 'AbortError') {
+              // Fallback: open audio directly in Safari so user can use long-press > Download
+              window.open(url, '_blank');
+              showToast("Tap & hold the audio to save");
+            }
+          }
+        } else {
+          // Older iOS: open directly so Safari handles it
+          window.open(url, '_blank');
+          showToast("Hold the audio to save to Files");
+        }
+        return;
+      }
+
+      // On Android / Desktop: use blob download
+      showToast("Downloading... this may take a moment");
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = (title || 'episode').replace(/[^a-z0-9 ]/gi, '_') + '.mp3';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+        showToast("Download saved ✓");
+      } catch (e) {
+        // Fallback if CORS blocks blob fetch
+        window.open(url, '_blank');
+        showToast("Opened — save manually if needed");
+      }
+      triggerHaptic('heavy');
     }
 
 
     /* ==========================================================================
-       AMBIENT STARFIELD
+       SERVICE WORKER AUTO-UPDATE DETECTION
        ========================================================================== */
+    let pendingUpdateWorker = null;
+
+    function showUpdateBanner() {
+      const banner = document.getElementById('update-banner');
+      if (banner) banner.style.display = 'flex';
+    }
+
+    function dismissUpdateBanner() {
+      const banner = document.getElementById('update-banner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    function applyUpdate() {
+      dismissUpdateBanner();
+      if (pendingUpdateWorker) {
+        // Tell the waiting SW to take control, then reload
+        pendingUpdateWorker.postMessage({ type: 'SKIP_WAITING' });
+        pendingUpdateWorker = null;
+      }
+      showToast("Updating Haven Scroll...");
+      setTimeout(() => window.location.reload(), 800);
+    }
+
+    function registerAndWatchSW() {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        // Case 1: A new SW is already waiting (user had old version cached)
+        if (reg.waiting) {
+          pendingUpdateWorker = reg.waiting;
+          showUpdateBanner();
+        }
+        // Case 2: A new SW finishes installing while the app is open
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // New version ready — there's already an old one controlling the page
+              pendingUpdateWorker = newWorker;
+              showUpdateBanner();
+            }
+          });
+        });
+      }).catch(err => console.log('SW registration failed:', err));
+
+      // When SW takes control (after SKIP_WAITING), a reload might already be triggered
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        // controllerchange fires after skipWaiting, reload happens in applyUpdate
+      });
+    }
     function toggleAmbientStarfield(activate) {
       const overlay = document.getElementById('ambient-starfield-overlay'); isAmbientActive = activate;
       if (activate) { overlay.style.display = 'flex'; initStarfield(); if (!isShieldPlaying) toggleSoundShield(); triggerHaptic('heavy'); } 
@@ -943,6 +1048,7 @@
       const touchSurface = document.getElementById('book-touch-surface');
       if (touchSurface) { touchSurface.addEventListener('touchstart', handleTouchStart, { passive: true }); touchSurface.addEventListener('touchend', handleTouchEnd, { passive: true }); }
       setTimeout(() => { document.getElementById('splash-screen').classList.add('hidden'); }, 2300);
+      registerAndWatchSW();
     });
   </script>
 </body>
