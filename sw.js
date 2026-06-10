@@ -1,7 +1,7 @@
 // HavenScroll Service Worker
 // Update CACHE_NAME version string whenever you push a new release to GitHub.
 // This is what triggers the "Update Available" banner for the user.
-const CACHE_NAME = 'havenscroll-v2'; // ← bump this (v3, v4...) on every new release
+const CACHE_NAME = 'havenscroll-v3'; // ← bump this (v3, v4...) on every new release
 
 const ASSETS_TO_CACHE = [
   './',
