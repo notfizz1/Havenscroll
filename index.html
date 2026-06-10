@@ -552,25 +552,32 @@
 
     // MOCK PODCAST DATA (Koppla din IndexedDB nedladdning till dessa)
     const podcastShows = [
-      {
-        id: "pod1",
-        title: "The Neuro-Sync Podcast",
-        author: "Dr. A. Huberman",
-        episodes: [
-          { id: "e1", title: "Mastering Focus & Deep Work", duration: "1:45:20", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-          { id: "e2", title: "The Science of Rest & Recovery", duration: "2:10:05", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" }
-        ]
+  {
+    id: "pod1",
+    title: "Huberman Lab Essentials",
+    author: "Dr. Andrew Huberman",
+    episodes: [
+      { 
+        id: "e1", 
+        title: "Master Your Sleep & Be More Alert When Awake", 
+        duration: "2:01:43", 
+        url: "https://chrt.fm/track/G2831D/pdst.fm/e/traffic.megaphone.fm/CORU4453535978.mp3" 
       },
-      {
-        id: "pod2",
-        title: "Sanctuary Nights",
-        author: "Belal Assaad",
-        episodes: [
-          { id: "e3", title: "Finding Sabr in the Storm", duration: "45:10", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
-        ]
+      { 
+        id: "e2", 
+        title: "Tools for Setting & Achieving Goals", 
+        duration: "1:41:03", 
+        url: "https://chrt.fm/track/G2831D/pdst.fm/e/traffic.megaphone.fm/CORU4316972074.mp3" 
+      },
+      { 
+        id: "e3", 
+        title: "Understand & Improve Memory Using Science-Based Tools", 
+        duration: "2:13:30", 
+        url: "https://chrt.fm/track/G2831D/pdst.fm/e/traffic.megaphone.fm/CORU9283749210.mp3" 
       }
-    ];
-
+    ]
+  }
+];
     let savedIds = JSON.parse(localStorage.getItem('texttube_saved_ids')) || [];
     let currentTab = 'stream'; let activeFilter = 'all'; let observer; let activeIndex = 0;
     let activeStreamCards = []; let pacerIntervalId = null;
