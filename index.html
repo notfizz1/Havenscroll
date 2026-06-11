@@ -554,48 +554,42 @@
     const baseCards = [
       {id:1, category:"Inner Sanctuary", author:"Belal Assaad", text:"Your inner well-being is a sanctuary that no other human being holds the key to. No matter how much your external environment tries to dictate your steps, your clothes, or your choices, remember: they can only touch the surface. Your heart and your peace belong to you. Find your Sabr (patience) in the storm, for true freedom is built from within.", icon:"✦"},
       {id:2, category:"Interactive Core", author:"Andrew Huberman", text:"PHYSIOLOGICAL SIGH PACER TRACK: Force-reset your autonomic nervous system from high alert state back to complete baseline calm using the biological cheat code below. Match your real breathing cycles smoothly with the tactile expanding geometry.", icon:"≈", isPacer:true},
-      {id:3, category:"Dry Satire", author:"Italian Bach", text:"Public Service Announcement: If someone in your immediate vicinity has graciously decided to micromanage exactly what you wear, when you train, or how you should behave—congratulations. You have been assigned a full-time personal dictator. The absolute best defense? Nod mechanically, say 'absolutely', and then proceed to do exactly what you wanted to do anyway in complete secrecy. Truly immaculate behavior.", icon:"❖"},
-      {id:4, category:"Neuro-Sync", author:"Metacognition", text:"You are not your thoughts. You are the one observing your thoughts. When the frustration of being restricted or controlled washes over you, take a mental step back. View that frustration as a scene in a movie playing out in front of you. It is happening in your awareness, but it does not define who you are.", icon:"≈"},
-      {id:5, category:"Inner Sanctuary", author:"Islamic Wisdom", text:"'For indeed, with hardship comes ease.' It is a promise. The heavy, restrictive chapter you are navigating right now is not permanent. It is merely a single page, not the whole book. Protect your energy, guard your inner peace, and trust that doors will open when the time is right.", icon:"✦"},
-      {id:6, category:"Dry Satire", author:"Italian Bach", text:"A quick survival guide: When adults around you genuinely believe they possess a complete monopoly on the truth and try to play chess with your life—just smile beautifully. Absolutely nothing confuses a control freak more than a calm, serene smile from the exact person they are desperately trying to make angry. Brilliant execution.", icon:"❖"},
+      {id:4, category:"Neuro-Sync", author:"Andrew Huberman", text:"You are not your thoughts. You are the one observing your thoughts. When frustration washes over you, take a mental step back. View it as a scene in a movie playing out in front of you. It is happening in your awareness, but it does not define who you are.", icon:"≈"},
+      {id:5, category:"Inner Sanctuary", author:"Quran 94:5–6", text:"'For indeed, with hardship comes ease.' It is a promise. The heavy chapter you are navigating right now is not permanent. It is merely a single page, not the whole book. Protect your energy, guard your inner peace, and trust that doors will open when the time is right.", icon:"✦"},
       {id:7, category:"Neuro-Sync", author:"Andrew Huberman", text:"Circadian Alignment Protocol: View early morning light in your eyes. On a clear day, aim for 5-10 minutes. On a cloudy, overcast day, aim for 20-30 minutes. This lights up your melanopsin ganglion cells, initiating an instant cortisol surge to keep you awake and focused, whilst starting a countdown timer for healthy melatonin release exactly 16 hours later.", icon:"≈"},
       {id:8, category:"Inner Sanctuary", author:"Belal Assaad", text:"The ultimate standard of maturity is to realize that when people judge or attempt to box you in, they are projecting their own inner chaos, fears, and conditioning. Do not inherit their limitations. Keep your focus anchored upward. Your value was already decreed before you were ever introduced to their expectations.", icon:"✦"},
-      {id:9, category:"Dry Satire", author:"Italian Bach", text:"Pro Tip: If you reside under the surveillance of someone whose primary mission is assessing your micro-habits—congratulations. You are the warden's favorite challenge. Simply acquire a small, mysterious physical ledger. Open it whenever they critique you, jot something down silently, and close it with an enigmatic nod. Psychological dominance secured.", icon:"❖"},
-      {id:10, category:"Neuro-Sync", author:"Metacognition", text:"The 'Gap and Gain' Neuro-Framework: Human brains automatically measure progress against an idealized, imaginary perfect state (the Gap), sparking immediate frustration. Shift this instantly. Force yourself to measure backwards: contrast your current independence, capability, and mental fortitude with where you stood last year (the Gain). This fires Dopamine instantly.", icon:"≈"},
-      {id:11, category:"Inner Sanctuary", author:"Spiritual Reflection", text:"In the quiet space between your breaths, there is a sacred sanctuary. When the noise of external expectations tries to define who you must be, sink deeper into your core. Remember: you are a deep, vast ocean, and the superficial restrictions of others are merely temporary surface waves. Protect your water, stand firm, and wait for the calm.", icon:"✦"},
-      {id:12, category:"Dry Satire", author:"Italian Bach", text:"A quick masterclass in strategic submission: When micro-dictators in your life give you detailed commands on how to run your private affairs, give them a warm, flawless smile. Tell them their guidance is 'absolutely life-altering,' then go directly back to your secure, encrypted plans. Silent operation is the peak of elegance.", icon:"❖"},
+      {id:10, category:"Neuro-Sync", author:"Andrew Huberman", text:"The 'Gap and Gain' Framework: Human brains automatically measure progress against an idealized perfect state, sparking frustration. Shift this. Force yourself to measure backwards: contrast your current capability and mental fortitude with where you stood last year. This is where real motivation lives.", icon:"≈"},
+      {id:11, category:"Inner Sanctuary", author:"Islamic Wisdom", text:"In the quiet space between your breaths, there is a sacred sanctuary. When the noise of external expectations tries to define who you must be, sink deeper into your core. You are a deep, vast ocean, and the restrictions of others are merely temporary surface waves. Protect your water, stand firm, and wait for the calm.", icon:"✦"},
       {id:13, category:"Neuro-Sync", author:"Andrew Huberman", text:"The Friction Law of Learning: Real neuroplasticity—the literal rewiring of your brain circuits—requires physical tension, frustration, and minor errors. When starting a complex habit or trying to focus under mental friction, remind yourself that the agitating feeling of discomfort is the biological signal that triggers neural adaptation.", icon:"≈"},
-      {id:14, category:"Inner Sanctuary", author:"Rumi Wisdom", text:"Do not feel lonely, for the entire universe is wrapped inside you. Shut your physical eyes, fall deeply in love with the peace of your soul, and remain there. The wound is the exact location where the Light enters you. Your spirit is entirely free, unbounded, and ready to fly long after the cages of life dissolve.", icon:"✦"},
+      {id:14, category:"Inner Sanctuary", author:"Rumi", text:"Do not feel lonely, for the entire universe is inside you. Fall deeply in love with the peace of your soul, and remain there. The wound is the exact location where the Light enters you. Your spirit is entirely free, unbounded, and ready to fly long after the cages of life dissolve.", icon:"✦"},
       {id:15, category:"Inner Sanctuary", author:"Belal Assaad", text:"True internal peace means silencing the validation-seeking voice inside you. When you move with pure intention, seeking only the pleasure of your Creator and the alignment of your soul, the negative commentary of creation loses its weight completely. Let them talk, while you remain anchored.", icon:"✦"},
       {id:16, category:"Neuro-Sync", author:"Andrew Huberman", text:"Dopamine Optimization: Avoid stacking multiple dopamine triggers at once—such as looking at social media while listening to intense music and consuming caffeine simultaneously. Stacking creates an artificially high peak followed by a devastating crash in baseline motivation. Protect your baseline focus.", icon:"≈"},
-      {id:17, category:"Dry Satire", author:"Italian Bach", text:"If you are currently being hit with passive-aggressive remarks regarding your daily routine, do not argue. Logic is entirely useless here. Instead, offer them a completely unrelated compliment in an intensely dramatic tone. Witness their mental operating system completely crash in real-time. Sensational.", icon:"❖"},
-      {id:18, category:"Neuro-Sync", author:"Anterior Midcingulate Cortex", text:"Neuroscience Breakthrough: Deep within your brain lies the Anterior Midcingulate Cortex (AMCC). This specific structure grows in volume when you force yourself to perform tasks you genuinely do not want to do, yet shrinks when you live in absolute comfort. When someone forces an unwanted micro-schedule onto you, view it with cold logic: they are accidentally funding the growth of your brain's supreme willpower center.", icon:"≈"},
+      {id:18, category:"Neuro-Sync", author:"Andrew Huberman", text:"Neuroscience Breakthrough: Deep within your brain lies the Anterior Midcingulate Cortex. This structure grows in volume when you force yourself to perform tasks you genuinely do not want to do, yet shrinks when you live in absolute comfort. Every time you do the hard thing anyway, you are literally building a bigger, stronger willpower center.", icon:"≈"},
       {id:19, category:"Inner Sanctuary", author:"Islamic Wisdom", text:"Your heart is a vessel; if you fill it with the anxieties of tomorrow and the frustrations of today, there will be no room left for peace. Trust the plan designed for you. Protect your spiritual morning and evening spaces like an unbreachable fort. Everything else is temporary white noise.", icon:"✦"},
-      {id:20, category:"Dry Satire", author:"Italian Bach", text:"When dealing with individuals who insist on mapping out your physical trajectory throughout the afternoon, try giving them full verbal updates on completely basic biological functions. 'I am currently preparing to shift my weight 4 centimeters to the left to optimize airflow.' They will leave you alone almost immediately.", icon:"❖"},
-      {id:21, category:"Neuro-Sync", author:"Stress Reframe", text:"Adrenaline does not carry an emotional signal. When you feel a racing heart, sweat, or physical tension in a restricted environment, your brain labels it as 'trapped' or 'angry'. Override the label. Tell yourself: 'My body is simply mobilizing fuel and energy to protect its core.' Change the definition, dominate the reaction.", icon:"≈"},
-      {id:22, category:"Inner Sanctuary", author:"Peace Affirmation", text:"No wall is high enough to hold a soaring spirit. No rule is tight enough to bind an intelligent mind. Close your physical eyes at night, let your physical location fade entirely into dark space, and tap into the unbounded sky inside you. You are entirely free.", icon:"✦"},
-      {id:23, category:"Inner Sanctuary", author:"Sh Yusuf Qardawi", text:"The basic premise is that everything is permissible (al-asl fil-ashya' al-ibahah). Nothing is prohibited except what has been explicitly declared as haram in a clear and authentic text from God or His Messenger.", icon:"✦"},
-      {id:24, category:"Inner Sanctuary", author:"Sh Yusuf Qardawi", text:"To make the lawful prohibited, or the prohibited lawful, is tantamount to claiming partnership with God in His legislative authority.", icon:"✦"},
-      {id:25, category:"Inner Sanctuary", author:"Sh Yusuf Qardawi", text:"Islam has blocked all avenues leading to the prohibited. If something is forbidden, then any actions, means, and circumstances that lead to it are also forbidden.", icon:"✦"},
-      {id:26, category:"Inner Sanctuary", author:"Sh Yusuf Qardawi", text:"Good intentions do not make the unlawful acceptable. The end does not justify the means in Islamic law.", icon:"✦"},
-      {id:27, category:"Inner Sanctuary", author:"Sh Yusuf Qardawi", text:"Doubtful things should be avoided in order to keep one's religion and honor pure and untainted.", icon:"✦"},
+      {id:21, category:"Neuro-Sync", author:"Andrew Huberman", text:"Adrenaline does not carry an emotional signal. When you feel a racing heart, sweat, or physical tension, your brain labels it as 'trapped' or 'angry'. Override the label. Tell yourself: 'My body is simply mobilizing fuel and energy.' Change the definition, and you dominate the reaction.", icon:"≈"},
+      {id:22, category:"Inner Sanctuary", author:"Islamic Wisdom", text:"No wall is high enough to hold a soaring spirit. No rule is tight enough to bind an intelligent mind. Close your eyes at night, let your physical location fade into dark space, and tap into the unbounded sky inside you. You are entirely free.", icon:"✦"},
+      {id:23, category:"Inner Sanctuary", author:"Sh. Yusuf al-Qaradawi", text:"The basic premise is that everything is permissible. Nothing is prohibited except what has been explicitly declared as haram in a clear and authentic text from God or His Messenger.", icon:"✦"},
+      {id:24, category:"Inner Sanctuary", author:"Sh. Yusuf al-Qaradawi", text:"To make the lawful prohibited, or the prohibited lawful, is tantamount to claiming partnership with God in His legislative authority.", icon:"✦"},
+      {id:25, category:"Inner Sanctuary", author:"Sh. Yusuf al-Qaradawi", text:"Islam has blocked all avenues leading to the prohibited. If something is forbidden, then any actions, means, and circumstances that lead to it are also forbidden.", icon:"✦"},
+      {id:26, category:"Inner Sanctuary", author:"Sh. Yusuf al-Qaradawi", text:"Good intentions do not make the unlawful acceptable. The end does not justify the means in Islamic law.", icon:"✦"},
+      {id:27, category:"Inner Sanctuary", author:"Sh. Yusuf al-Qaradawi", text:"Doubtful things should be avoided in order to keep one's religion and honor pure and untainted.", icon:"✦"},
       {id:28, category:"Inner Sanctuary", author:"Abdul Rahman I. Doi", text:"Shariah is the clear path that leads man to spiritual and moral salvation. It is a complete code of life covering every aspect, from individual rituals to societal governance.", icon:"✦"},
       {id:29, category:"Inner Sanctuary", author:"Abdul Rahman I. Doi", text:"The law in Islam is not a static set of rules, but a living guidance meant to uphold justice, mercy, and the overall well-being of humanity.", icon:"✦"},
       {id:30, category:"Inner Sanctuary", author:"Abdul Rahman I. Doi", text:"The ultimate goal of Shariah is to protect five fundamental rights: faith, life, intellect, lineage, and property.", icon:"✦"},
       {id:31, category:"Inner Sanctuary", author:"Abdul Rahman I. Doi", text:"Justice in Islam is an absolute duty, to be upheld even if it goes against oneself, one's parents, or one's kindred.", icon:"✦"},
       {id:32, category:"Inner Sanctuary", author:"Abdul Rahman I. Doi", text:"Islamic law provides a harmonious balance between material progress and spiritual elevation, ensuring neither is sacrificed for the other.", icon:"✦"},
-      {id:33, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"The goal of Islamic jurisprudence (Usul al-Fiqh) is to provide a strict and scientific methodology for interpreting divine texts and applying them to new, contemporary situations.", icon:"✦"},
+      {id:33, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"The goal of Islamic jurisprudence is to provide a strict and scientific methodology for interpreting divine texts and applying them to new, contemporary situations.", icon:"✦"},
       {id:34, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"The nature of justice in Islam is based on a careful balance between individual rights and the collective interest of society, guided by the overarching purposes of the law.", icon:"✦"},
-      {id:35, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"Legal interpretation (Ijtihad) requires not only deep textual understanding, but also a profound insight into the society and the era in which the law is to be applied.", icon:"✦"},
+      {id:35, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"Legal interpretation requires not only deep textual understanding, but also a profound insight into the society and the era in which the law is to be applied.", icon:"✦"},
       {id:36, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"The foundational texts provide the universal principles, while jurisprudence bridges the gap between unchanging divine intent and shifting human realities.", icon:"✦"},
-      {id:37, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"A jurist must understand the Maqasid (objectives) of the law to prevent a rigid application of the letter from defeating the spirit of justice.", icon:"✦"},
+      {id:37, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"A jurist must understand the objectives of the law to prevent a rigid application of the letter from defeating the spirit of justice.", icon:"✦"},
       {id:38, category:"Inner Sanctuary", author:"Muhammed Al Ubaidy", text:"Our inner self functions like a mirror; if it is covered with the dust of prejudice and ignorance, it can never reflect the pure light of truth and wisdom.", icon:"✦"},
       {id:39, category:"Inner Sanctuary", author:"Muhammed Al Ubaidy", text:"Understanding oneself is the first step toward understanding the world. When you clear your inner mirror, your perception of your surroundings changes.", icon:"✦"},
       {id:40, category:"Inner Sanctuary", author:"Muhammed Al Ubaidy", text:"True reflection is not about seeing what we want to see, but about having the courage to look at the face of our own flaws and working to heal them.", icon:"✦"},
       {id:41, category:"Inner Sanctuary", author:"Muhammed Al Ubaidy", text:"Silence is the polish of the mirror; it is in quiet contemplation that the deepest truths of the soul become visible.", icon:"✦"},
       {id:42, category:"Inner Sanctuary", author:"Muhammed Al Ubaidy", text:"Do not blame the mirror if it shows a fractured image; look instead at what you are presenting to it.", icon:"✦"},
       {id:43, category:"Neuro-Sync", author:"Robert Kegan", text:"Human being is fundamentally a meaning-making activity. We do not just mechanically react to the world; we create the meaning that shapes how we experience it.", icon:"≈"},
-      {id:44, category:"Neuro-Sync", author:"Robert Kegan", text:"Psychological development is the continuous process where what was once 'Subject' (that which we are fused with and controlled by) becomes 'Object' (that which we can look at, reflect upon, and master).", icon:"≈"},
+      {id:44, category:"Neuro-Sync", author:"Robert Kegan", text:"Psychological development is the continuous process where what was once 'Subject' — that which we are fused with and controlled by — becomes 'Object' — that which we can look at, reflect upon, and master.", icon:"≈"},
       {id:45, category:"Neuro-Sync", author:"Robert Kegan", text:"Growth involves the loss of an old way of understanding the world before the new one has fully formed; it is a natural crisis of disorientation and rebirth.", icon:"≈"},
       {id:46, category:"Neuro-Sync", author:"Robert Kegan", text:"People do not just have ideas; they are embedded in them. A shift in development is not just a change in what we think, but a change in how we think.", icon:"≈"},
       {id:47, category:"Neuro-Sync", author:"Robert Kegan", text:"The evolutionary truce is the delicate balance between our need for connection with others and our need for distinct individual autonomy.", icon:"≈"},
@@ -619,7 +613,14 @@
       {id:65, category:"Inner Sanctuary", author:"Rumi", text:"Yesterday I was clever, so I wanted to change the world. Today I am wise, so I am changing myself.", icon:"✦"},
       {id:66, category:"Inner Sanctuary", author:"Kahlil Gibran", text:"To understand the heart and mind of a person, look not at what he has already achieved, but at what he aspires to.", icon:"✦"},
       {id:67, category:"Neuro-Sync", author:"Zhuangzi", text:"Happiness is the absence of the striving for happiness.", icon:"≈"},
-      {id:68, category:"Inner Sanctuary", author:"Plato", text:"The measure of a man is what he does with power.", icon:"✦"}
+      {id:68, category:"Inner Sanctuary", author:"Plato", text:"The measure of a man is what he does with power.", icon:"✦"},
+      {id:69, category:"Dry Satire", author:"Italian Bach", text:"Nothing says 'genuine human emotion' quite like remembering to adjust your ring light before weeping on camera.", icon:"❖"},
+      {id:70, category:"Dry Satire", author:"Italian Bach", text:"I am convinced that some people view the internet not as a public forum, but as a personal diary they have accidentally read aloud to millions.", icon:"❖"},
+      {id:71, category:"Dry Satire", author:"Italian Bach", text:"My favorite genre of video is someone having a deep existential crisis, but making sure to add a trending audio underneath it for algorithm optimization.", icon:"❖"},
+      {id:72, category:"Dry Satire", author:"Italian Bach", text:"If there is one thing modern creators excel at, it is surviving a situation they completely fabricated for views.", icon:"❖"},
+      {id:73, category:"Dry Satire", author:"Italian Bach", text:"There is a terrifying level of confidence required to look at a camera, do absolutely nothing for fifteen seconds, and expect the internet to praise you for it.", icon:"❖"},
+      {id:74, category:"Dry Satire", author:"Italian Bach", text:"Stop sharing your family drama on TikTok. Go to therapy, or at the very least, a group chat.", icon:"❖"},
+      {id:75, category:"Dry Satire", author:"Italian Bach", text:"Thank you from the bottom of my organs.", icon:"❖"}
     ];
 
     const bookPages = [
@@ -646,35 +647,74 @@
     const microChallenges = ["Relax your shoulders, slightly part your teeth, and let your jaw completely unclench. Notice the weight of your body on your seat.","Trace the cold temperature of a glass of water all the way down to your stomach during your next sip.","Silently count backwards from 10 to 1 whenever you feel the urge to react to an annoying or controlling remark.","Look at a shadow cast in your room right now. Map its exact outline, gradients, and boundaries with cold focus.","Give someone an incredibly polite, serene smile that completely masks your real, secret strategic goals.","Sit in absolute stillness for exactly 60 seconds. Do nothing but trace the physical sound of your own quiet inhales."];
     const groundingSteps = [{num:5,inst:"Look around you and locate 5 visible objects. Pay close attention to their shadows, edges, texture, or colors.",stepText:"Step 1 of 5: Vision"},{num:4,inst:"Acknowledge 4 things you can physically feel. The weight of your phone, your feet on the rug, your hair, or the air on your neck.",stepText:"Step 2 of 5: Touch"},{num:3,inst:"Listen closely and identify 3 distinct sounds. It could be faraway traffic, a bird, the sound of your own breathing, or the wind.",stepText:"Step 3 of 5: Hearing"},{num:2,inst:"Notice 2 smells around you. Your clothes, your soap, a book page, or simply the scent of the room you are in.",stepText:"Step 4 of 5: Olfactory"},{num:1,inst:"Acknowledge 1 thing you can taste, or simply notice the neutral taste in your mouth. Sip some cold water if you can.",stepText:"Step 5 of 5: Taste"}];
 
-    // MOCK PODCAST DATA (Koppla din IndexedDB nedladdning till dessa)
+    // PODCAST DATA — update manually when new episodes come out
     const podcastShows = [
-  {
-    id: "pod_latest",
-    title: "Huberman Lab",
-    author: "Dr. Andrew Huberman",
-    image: "https://megaphone.imgix.net/podcasts/2d042ec8-5fd0-11f1-a583-d34f98bf1200/image/c939ff80ce31857dd7c3855498b342f4.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress",
-    episodes: [
-      { 
-        id: "latest_1", 
-        title: "Eating for Better Sleep & Foods that Improve Metabolic Health | Dr. Marie-Pierre St-Onge", 
-        duration: "1:57:00", 
-        url: "https://traffic.megaphone.fm/SCIM5220943767.mp3" 
-      },
-      { 
-        id: "latest_2", 
-        title: "Essentials: Psychedelics & Neurostimulation for Brain Rewiring | Dr. Nolan Williams", 
-        duration: "0:40:00", 
-        url: "https://traffic.megaphone.fm/SCIM3664218578.mp3?updated=1747836376" 
-      },
-      { 
-        id: "latest_3", 
-        title: "Peptides: The Science, Uses & Safety | Dr. Abud Bakri", 
-        duration: "2:00:00", 
-        url: "https://traffic.megaphone.fm/SCIM8380331046.mp3" 
+      {
+        id: "pod_latest",
+        title: "Huberman Lab",
+        author: "Dr. Andrew Huberman",
+        image: "https://megaphone.imgix.net/podcasts/2d042ec8-5fd0-11f1-a583-d34f98bf1200/image/c939ff80ce31857dd7c3855498b342f4.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress",
+        episodes: [
+          {
+            title: "Eating for Better Sleep & Foods that Improve Metabolic Health | Dr. Marie-Pierre St-Onge",
+            duration: "1:57:00",
+            url: "https://traffic.megaphone.fm/SCIM5220943767.mp3"
+          },
+          {
+            title: "Essentials: Psychedelics & Neurostimulation for Brain Rewiring | Dr. Nolan Williams",
+            duration: "0:40:00",
+            url: "https://traffic.megaphone.fm/SCIM3664218578.mp3?updated=1747836376"
+          },
+          {
+            title: "Peptides: The Science, Uses & Safety | Dr. Abud Bakri",
+            duration: "2:00:00",
+            url: "https://traffic.megaphone.fm/SCIM8380331046.mp3"
+          }
+        ]
       }
-    ]
-  }
-];
+    ];
+
+    /* ==========================================================================
+       PODCAST RENDER & PLAYER LOGIC
+       ========================================================================== */
+    function renderPodcasts() {
+      const container = document.getElementById('podcast-container');
+      container.innerHTML = '';
+      podcastShows.forEach(show => {
+        const showDiv = document.createElement('div');
+        showDiv.className = 'podcast-show-item';
+        const epHtml = show.episodes.map(ep => {
+          const safeTitle = ep.title.replace(/'/g, "\\'");
+          const safeShow  = show.title.replace(/'/g, "\\'");
+          const safeImg   = (show.image || '').replace(/'/g, "\\'");
+          return `
+            <div class="episode-item">
+              <div style="flex:1; min-width:0; padding-right:0.5rem;">
+                <div class="ep-title">${ep.title}</div>
+                <div class="ep-meta">${ep.duration}</div>
+              </div>
+              <div class="ep-actions">
+                <button class="ep-btn" onclick="playAudioTrack('${ep.url}','${safeTitle}','${safeShow}','${safeImg}')" title="Play">▶</button>
+                <button class="ep-btn" onclick="downloadPodcast('${ep.url}','${safeTitle}')" title="Share / Save">↓</button>
+              </div>
+            </div>`;
+        }).join('');
+        showDiv.innerHTML = `
+          <div class="podcast-show-header" onclick="this.parentElement.classList.toggle('open'); triggerHaptic('tick');">
+            <div class="podcast-thumb">
+              ${show.image ? `<img src="${show.image}" alt="" onerror="this.parentElement.innerHTML='🎙️'">` : '🎙️'}
+            </div>
+            <div class="podcast-info">
+              <div class="podcast-title">${show.title}</div>
+              <div class="podcast-author">${show.author}</div>
+            </div>
+            <span style="color:var(--text-muted); font-size:0.75rem; flex-shrink:0; margin-left:0.5rem;">▾</span>
+          </div>
+          <div class="podcast-episodes">${epHtml}</div>`;
+        container.appendChild(showDiv);
+      });
+    }
+
     let savedIds = JSON.parse(localStorage.getItem('texttube_saved_ids')) || [];
     let currentTab = 'stream'; let activeFilter = 'all'; let observer; let activeIndex = 0;
     let activeStreamCards = []; let pacerIntervalId = null;
@@ -899,46 +939,6 @@
 
     function openLetter(id) { const letter = omerLetters.find(l => l.id === id); if (!letter) return; document.getElementById('letter-text-box').innerText = letter.text; document.getElementById('letter-modal').style.display = 'flex'; triggerHaptic('heavy'); }
     function closeLetter() { document.getElementById('letter-modal').style.display = 'none'; triggerHaptic('tick'); }
-
-    /* ==========================================================================
-       PODCAST RENDER & PLAYER LOGIC
-       ========================================================================== */
-    function renderPodcasts() {
-      const container = document.getElementById('podcast-container');
-      container.innerHTML = '';
-      podcastShows.forEach(show => {
-        const showDiv = document.createElement('div');
-        showDiv.className = 'podcast-show-item';
-        
-        let epHtml = '';
-        show.episodes.forEach(ep => {
-          epHtml += `
-            <div class="episode-item">
-              <div>
-                <div class="ep-title">${ep.title}</div>
-                <div class="ep-meta">${ep.duration}</div>
-              </div>
-              <div class="ep-actions">
-                <button class="ep-btn" onclick="playAudioTrack('${ep.url}', '${ep.title.replace(/'/g, "\\'")}', '${show.title.replace(/'/g, "\\'")}', '${(show.image || '').replace(/'/g, "\\'")}')" title="Play">▶</button>
-                <button class="ep-btn" onclick="downloadPodcast('${ep.url}', '${ep.title.replace(/'/g, "\\'")}')" title="Download / Share Offline">↓</button>
-              </div>
-            </div>
-          `;
-        });
-
-        showDiv.innerHTML = `
-          <div class="podcast-show-header" onclick="this.parentElement.classList.toggle('open'); triggerHaptic('tick');">
-            <div class="podcast-thumb">${show.image ? `<img src="${show.image}" alt="${show.title}" onerror="this.parentElement.innerHTML='🎙️'">` : '🎙️'}</div>
-            <div class="podcast-info">
-              <div class="podcast-title">${show.title}</div>
-              <div class="podcast-author">${show.author}</div>
-            </div>
-          </div>
-          <div class="podcast-episodes">${epHtml}</div>
-        `;
-        container.appendChild(showDiv);
-      });
-    }
 
     /* ==========================================================================
        PODCAST PLAYER — full controls
