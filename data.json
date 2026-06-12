@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "2.0.0",
+    "version": "2.2.0",
     "note": "Edit this file to add quotes, book pages, letters, challenges or podcasts. No HTML changes needed."
   },
   "quotes": [
@@ -487,6 +487,104 @@
       "author": "Italian Bach",
       "text": "Thank you from the bottom of my organs.",
       "icon": "❖"
+    },
+    {
+      "id": 76,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "There is no morality without freedom.",
+      "icon": "≈"
+    },
+    {
+      "id": 77,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "The unconscious can make a fool of you in no time.",
+      "icon": "≈"
+    },
+    {
+      "id": 78,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "The unconscious itself initiates the process of renewal.",
+      "icon": "≈"
+    },
+    {
+      "id": 79,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "The primitive mentality does not invent myths, it experiences them.",
+      "icon": "≈"
+    },
+    {
+      "id": 80,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "Nobody has ever seen an archetype, and nobody has ever seen an atom either.",
+      "icon": "≈"
+    },
+    {
+      "id": 81,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "The meeting of two personalities is like the contact of two chemical substances: if there is any reaction, both are transformed.",
+      "icon": "≈"
+    },
+    {
+      "id": 82,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "The least of things with a meaning is worth more in life than the greatest of things without it.",
+      "icon": "≈"
+    },
+    {
+      "id": 83,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "The shoe that fits one person pinches another; there is no recipe for living that suits all cases.",
+      "icon": "≈"
+    },
+    {
+      "id": 84,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "Who looks outside dreams; who looks inside awakes.",
+      "icon": "≈"
+    },
+    {
+      "id": 85,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "Everything that irritates us about others can lead us to an understanding of ourselves.",
+      "icon": "≈"
+    },
+    {
+      "id": 86,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "Loneliness does not come from having no people about one, but from being unable to communicate the things that seem important to oneself.",
+      "icon": "≈"
+    },
+    {
+      "id": 87,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "The bigger the crowd, the more negligible the individual.",
+      "icon": "≈"
+    },
+    {
+      "id": 88,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "Consciousness is a precondition of being.",
+      "icon": "≈"
+    },
+    {
+      "id": 89,
+      "category": "Neuro-Sync",
+      "author": "Carl Jung",
+      "text": "Reason alone does not suffice.",
+      "icon": "≈"
     }
   ],
   "bookPages": [
