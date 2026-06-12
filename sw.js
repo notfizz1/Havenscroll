@@ -1,7 +1,19 @@
-const CACHE_NAME = 'havenscroll-cache-v1';
+const CACHE_NAME = 'havenscroll-cache-v2.1.0';
 
+// Everything the sanctuary needs to run with zero network
 const ASSETS_TO_CACHE = [
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './data.json',
   './manifest.webmanifest',
+  './assets/fonts/Inter-Variable.ttf',
+  './assets/fonts/Inter-Italic-Variable.ttf',
+  './assets/audio/splash-sound.mp3',
+  './assets/video/sanctuary-bg.mp4',
+  './assets/video/neuro-bg.mp4',
+  './assets/video/satire-bg.mp4',
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -9,7 +21,11 @@ const ASSETS_TO_CACHE = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS_TO_CACHE))
+    caches.open(CACHE_NAME).then(cache =>
+      // addAll fails atomically if one asset 404s (e.g. icons not deployed yet),
+      // so cache each item individually and tolerate misses.
+      Promise.all(ASSETS_TO_CACHE.map(url => cache.add(url).catch(() => null)))
+    )
   );
 });
 
@@ -29,23 +45,33 @@ self.addEventListener('fetch', event => {
   // Never intercept external URLs (podcast audio etc.)
   if (url.origin !== self.location.origin) return;
 
-  // NEVER cache these — always fetch fresh from network
-  const alwaysFresh = ['index.html', 'version.json', './'];
-  const isAlwaysFresh = alwaysFresh.some(p => url.pathname.endsWith(p))
+  // NETWORK-FIRST for the app shell + content — fresh when online,
+  // cached when offline. (v1 served these network-only; v2 falls back.)
+  const networkFirst = ['index.html', 'app.js', 'style.css', 'data.json', 'version.json'];
+  const isNetworkFirst = networkFirst.some(p => url.pathname.endsWith(p))
     || url.pathname === '/'
     || url.pathname.endsWith('/');
 
-  if (isAlwaysFresh) {
+  if (isNetworkFirst) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
-        .catch(() => caches.match('./index.html'))
+        .then(res => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          return res;
+        })
+        .catch(() => caches.match(event.request).then(c => c || caches.match('./index.html')))
     );
     return;
   }
 
-  // Everything else (icons, manifest): cache first
+  // CACHE-FIRST for heavy static media (fonts, video, audio, icons)
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    caches.match(event.request).then(cached => cached || fetch(event.request).then(res => {
+      const copy = res.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+      return res;
+    }))
   );
 });
 
