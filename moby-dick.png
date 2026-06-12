@@ -1,0 +1,29 @@
+{
+  "note": "Add a book: drop mybook.txt + mybook.png into /books/ and add an entry here. type 'txt' books are paginated automatically; the cover png must share the txt filename.",
+  "books": [
+    {
+      "id": "lawful-prohibited",
+      "title": "The Lawful and the Prohibited in Islam",
+      "author": "Sh. Yusuf Qardawi",
+      "type": "builtin",
+      "txt": "",
+      "cover": ""
+    },
+    {
+      "id": "alice-in-wonderland",
+      "title": "Alice's Adventures in Wonderland",
+      "author": "Lewis Carroll",
+      "type": "txt",
+      "txt": "./books/alice-in-wonderland.txt",
+      "cover": "./books/alice-in-wonderland.png"
+    },
+    {
+      "id": "moby-dick",
+      "title": "Moby Dick; or, The Whale",
+      "author": "Herman Melville",
+      "type": "txt",
+      "txt": "./books/moby-dick.txt",
+      "cover": "./books/moby-dick.png"
+    }
+  ]
+}
