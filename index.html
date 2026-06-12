@@ -24,7 +24,7 @@
     <canvas id="starfield-canvas"></canvas>
     <div class="ambient-header"><div class="brand-logo" style="font-size:1.15rem;">Haven<span>Scroll</span></div><button class="ambient-exit" onclick="toggleAmbientStarfield(false)">Exit Ambient Mode</button></div>
     <div class="ambient-pacer-indicator"><div class="ambient-pacer-text" id="ambient-pacer-label">Breathe deeply...</div></div>
-    <div class="ambient-footer">Sound Shield & Starfield Active</div>
+    <div class="ambient-footer">Forest Ambience & Starfield Active</div>
   </div>
 
   <!-- INTERACTIVE ENVELOPE MODAL -->
@@ -52,7 +52,7 @@
       <div class="top-meta">
         <div class="brand-logo">Haven<span>Scroll</span></div>
         <div class="top-action-bar">
-          <button class="header-btn" id="sound-shield-btn" onclick="toggleSoundShield()" title="Activate Sound Shield (Heavy Rain)">
+          <button class="header-btn" id="sound-shield-btn" onclick="toggleSoundShield()" title="Activate Sound Shield (Forest Rain)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             <span id="sound-btn-text">Sound Shield</span>
           </button>
@@ -73,14 +73,32 @@
     <!-- ENDLESS STREAM CONTAINER -->
     <div id="feed-container"></div>
 
-    <!-- 3D BOOK READER -->
+    <!-- HAVEN BOOKSHELF + 3D BOOK READER -->
     <div id="books-view">
-      <div class="oasis-header" style="margin-bottom:0.5rem; padding-bottom: 0.5rem; flex-shrink: 0;"><h2 class="oasis-title">Haven <span>Bookshelf</span></h2><p class="oasis-subtitle">Read complete, structured texts completely offline. Tap margins to turn pages.</p></div>
-      <div class="book-container" id="book-touch-surface">
-        <div class="tap-zone-left" onclick="turnPage('prev')">‹</div><div class="tap-zone-right" onclick="turnPage('next')">›</div>
-        <div class="book-page-slider" id="book-page-slider"></div>
-        <div class="book-pagination"><span id="book-author-tag" style="text-transform: uppercase; letter-spacing: 0.05em; font-size:0.65rem;">Sh Yusuf Qardawi</span><span id="book-progress-text">Page 1 of 10</span></div>
+
+      <!-- SHELF (default) -->
+      <div id="bookshelf-view">
+        <div class="oasis-header" style="margin-bottom:0.5rem; padding-bottom:0.5rem; flex-shrink:0;"><h2 class="oasis-title">Haven <span>Bookshelf</span></h2><p class="oasis-subtitle">Your private offline library. Tap a cover to start reading.</p></div>
+        <div id="continue-reading-slot"></div>
+        <div id="bookshelf-grid"></div>
       </div>
+
+      <!-- READER (opens from a shelf tile) -->
+      <div id="book-reader-view">
+        <div class="reader-header">
+          <button class="reader-back-btn" onclick="closeReader()">‹ Shelf</button>
+          <div class="reader-title-block">
+            <div class="reader-book-title" id="reader-book-title">Book Title</div>
+            <div class="reader-book-author" id="reader-book-author"></div>
+          </div>
+        </div>
+        <div class="book-container" id="book-touch-surface">
+          <div class="tap-zone-left" onclick="turnPage('prev')">‹</div><div class="tap-zone-right" onclick="turnPage('next')">›</div>
+          <div class="book-page-slider" id="book-page-slider"></div>
+          <div class="book-pagination"><span id="book-author-tag" style="text-transform: uppercase; letter-spacing: 0.05em; font-size:0.65rem;">Haven Library</span><span id="book-progress-text">Page 1 of 1</span></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- OASIS TOOLKIT -->
