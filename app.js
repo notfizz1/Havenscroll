@@ -244,7 +244,7 @@ function runSplashSequence() {
 let savedIds = JSON.parse(localStorage.getItem('texttube_saved_ids')) || [];
 let currentTab = 'stream'; let activeFilter = 'all'; let observer; let activeIndex = 0;
 let activeStreamCards = []; let pacerIntervalId = null;
-let audioCtx = null; let noiseNode = null; let filterNode = null; let isShieldPlaying = false;
+let isShieldPlaying = false; let ambientAutoStarted = false;
 let activeVibe = null; let groundingIndex = 0;
 let isAmbientActive = false; let canvas, ctx; let animationFrameId = null; let stars = []; let ambientPacerVal = 0; let ambientPacerDirection = 1;
 let currentBookPageIndex = 0; let touchStartX = 0; let touchEndX = 0;
@@ -375,24 +375,202 @@ function setupParallax() {
 }
 
 /* ==========================================================================
-   8. 3D BOOK READER
+   8. HAVEN BOOKSHELF — multi-book 3D reader with saved progress
+   Books live in /books/: mybook.txt + mybook.png (same filename) plus an
+   entry in books/books.json. Plain-text books are sanitized and paginated
+   automatically; progress per book is stored in localStorage.
    ========================================================================== */
-function renderBook() {
-  const container = document.getElementById('book-page-slider'); container.innerHTML = '';
-  bookPages.forEach((page, index) => {
-    const pageDiv = document.createElement('div'); pageDiv.className = 'book-page';
-    if (index < currentBookPageIndex) pageDiv.classList.add('page-prev');
-    else if (index === currentBookPageIndex) pageDiv.classList.add('page-active');
-    else pageDiv.classList.add('page-next');
-    pageDiv.innerHTML = page.content; container.appendChild(pageDiv);
+let booksCatalog = [];
+let currentBook = null;
+let currentBookPages = [];
+const READING_KEY = 'haven_reading_v1';
+const bookTextCache = {};
+
+function readingState() { try { return JSON.parse(localStorage.getItem(READING_KEY)) || { lastBookId: null, books: {} }; } catch (e) { return { lastBookId: null, books: {} }; } }
+function saveReadingState(s) { localStorage.setItem(READING_KEY, JSON.stringify(s)); }
+function rememberProgress() {
+  if (!currentBook) return;
+  const s = readingState();
+  s.lastBookId = currentBook.id;
+  s.books[currentBook.id] = { page: currentBookPageIndex, total: currentBookPages.length, ts: Date.now() };
+  saveReadingState(s);
+}
+
+async function loadBooksCatalog() {
+  try {
+    const res = await fetch('./books/books.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    booksCatalog = (await res.json()).books || [];
+  } catch (e) {
+    console.error('books.json failed to load:', e);
+    booksCatalog = [{ id: 'lawful-prohibited', title: 'The Lawful and the Prohibited in Islam', author: 'Sh. Yusuf Qardawi', type: 'builtin', txt: '', cover: '' }];
+  }
+}
+
+function escapeHTML(str) { return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+/* Convert a raw .txt into sanitized, phone-comfortable pages */
+function paginateText(raw, book) {
+  let text = raw.replace(/\r\n/g, '\n');
+  const endMark = text.search(/\*\*\*\s*END OF THE PROJECT GUTENBERG/i);
+  if (endMark > -1) text = text.slice(0, endMark);
+  const startMatch = text.match(/\*\*\*\s*START OF THE PROJECT GUTENBERG[^\n]*\n/i);
+  if (startMatch) text = text.slice(startMatch.index + startMatch[0].length);
+  const paragraphs = text.split(/\n\s*\n/).map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(p => p.length);
+
+  const PAGE_BUDGET = 850; // chars per page — comfortable, not tiny
+  const pages = [];
+  let buf = '', size = 0;
+  const flush = () => { if (buf) { pages.push('<div class="txt-page">' + buf + '</div>'); buf = ''; size = 0; } };
+
+  paragraphs.forEach(p => {
+    const isHeading = /^(CHAPTER|EPILOGUE|ETYMOLOGY|EXTRACTS|CONTENTS|PROLOGUE|THE END)/i.test(p) && p.length < 90;
+    const chunks = [];
+    if (p.length > 1300) {
+      let rest = p;
+      while (rest.length > 1300) {
+        let cut = rest.lastIndexOf('. ', 1200);
+        if (cut < 400) cut = 1200;
+        chunks.push(rest.slice(0, cut + 1).trim());
+        rest = rest.slice(cut + 1).trim();
+      }
+      if (rest) chunks.push(rest);
+    } else { chunks.push(p); }
+
+    chunks.forEach(chunk => {
+      const html = isHeading
+        ? '<h3 class="txt-heading">' + escapeHTML(chunk) + '</h3>'
+        : '<p class="txt-para">' + escapeHTML(chunk) + '</p>';
+      if (size > 0 && (size + chunk.length > PAGE_BUDGET || (isHeading && size > PAGE_BUDGET * 0.4))) flush();
+      buf += html; size += chunk.length;
+    });
   });
-  document.getElementById('book-progress-text').innerText = `Page ${currentBookPageIndex + 1} of ${bookPages.length}`;
+  flush();
+  const coverPage = '<div style="text-align:center; margin-top:2rem; padding:1rem;"><div style="font-size:0.72rem; color:var(--accent-gold); letter-spacing:0.2em; text-transform:uppercase; margin-bottom:1.5rem;">Oasis Library</div><h2 style="font-family:var(--font-serif); font-size:1.7rem; line-height:1.35; margin-bottom:1rem; color:#FFF;">' + escapeHTML(book.title) + '</h2><div style="width:40px; height:1px; background:var(--accent-gold); margin:1.5rem auto;"></div><p style="font-size:0.82rem; color:var(--text-muted); font-style:italic; margin-bottom:0.25rem;">by</p><p style="font-weight:700; color:var(--text-primary); letter-spacing:0.05em;">' + escapeHTML((book.author || 'Unknown').toUpperCase()) + '</p><div style="margin-top:4.5rem; font-size:0.72rem; color:var(--text-muted); animation: heartbeat 2s infinite;">Tap the right margin to start reading →</div></div>';
+  pages.unshift(coverPage);
+  return pages;
+}
+
+function renderBookshelf() {
+  const grid = document.getElementById('bookshelf-grid');
+  const slot = document.getElementById('continue-reading-slot');
+  if (!grid) return;
+  grid.innerHTML = ''; slot.innerHTML = '';
+  const s = readingState();
+  const last = s.lastBookId ? booksCatalog.find(b => b.id === s.lastBookId) : null;
+  const lastProg = last ? s.books[last.id] : null;
+  if (last && lastProg && lastProg.page > 0) {
+    slot.innerHTML = '<div class="continue-card" onclick="openBook(\'' + last.id + '\')">'
+      + '<div class="continue-thumb">' + (last.cover ? '<img src="' + last.cover + '" alt="" onerror="this.remove()">' : '📖') + '</div>'
+      + '<div class="continue-info"><div class="continue-label">Continue where you left off</div>'
+      + '<div class="continue-title">' + escapeHTML(last.title) + '</div>'
+      + '<div class="continue-progress">Page ' + (lastProg.page + 1) + ' of ' + lastProg.total + '</div></div>'
+      + '<div class="continue-resume">Resume ›</div></div>';
+  }
+  booksCatalog.forEach(book => {
+    const prog = s.books[book.id];
+    const tile = document.createElement('div');
+    tile.className = 'book-tile';
+    tile.onclick = () => openBook(book.id);
+    tile.innerHTML = '<div class="book-tile-cover">'
+      + (book.cover ? '<img src="' + book.cover + '" alt="" loading="lazy" onerror="this.parentElement.classList.add(\'cover-fallback\'); this.remove();">' : '')
+      + '<span class="cover-fallback-title">' + escapeHTML(book.title) + '</span>'
+      + (prog && prog.total ? '<div class="book-tile-bar"><div style="width:' + Math.round(((prog.page + 1) / prog.total) * 100) + '%"></div></div>' : '')
+      + '</div><div class="book-tile-title">' + escapeHTML(book.title) + '</div>'
+      + '<div class="book-tile-author">' + escapeHTML(book.author || '') + '</div>';
+    if (!book.cover) tile.querySelector('.book-tile-cover').classList.add('cover-fallback');
+    grid.appendChild(tile);
+  });
+}
+
+async function openBook(id) {
+  const book = booksCatalog.find(b => b.id === id);
+  if (!book) return;
+  triggerHaptic('heavy');
+  if (!bookTextCache[id]) {
+    if (book.type === 'builtin') {
+      bookTextCache[id] = bookPages.map(p => p.content);
+    } else {
+      try {
+        const res = await fetch(book.txt);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        bookTextCache[id] = paginateText(await res.text(), book);
+      } catch (e) { showToast('Book could not load'); return; }
+    }
+  }
+  currentBook = book;
+  currentBookPages = bookTextCache[id];
+  const saved = readingState().books[id];
+  currentBookPageIndex = (saved && saved.page < currentBookPages.length) ? saved.page : 0;
+  document.getElementById('reader-book-title').innerText = book.title;
+  document.getElementById('reader-book-author').innerText = book.author || '';
+  document.getElementById('book-author-tag').innerText = (book.author || 'Haven Library').toUpperCase();
+  document.getElementById('bookshelf-view').style.display = 'none';
+  document.getElementById('book-reader-view').style.display = 'flex';
+  renderBook();
+  rememberProgress();
+}
+
+function closeReader() {
+  rememberProgress();
+  currentBook = null;
+  document.getElementById('book-reader-view').style.display = 'none';
+  document.getElementById('bookshelf-view').style.display = 'flex';
+  renderBookshelf();
+  triggerHaptic('tick');
+}
+
+function showBooksTab() {
+  if (currentBook) {
+    document.getElementById('bookshelf-view').style.display = 'none';
+    document.getElementById('book-reader-view').style.display = 'flex';
+    renderBook();
+  } else {
+    document.getElementById('book-reader-view').style.display = 'none';
+    document.getElementById('bookshelf-view').style.display = 'flex';
+    renderBookshelf();
+  }
+}
+
+/* Windowed render: only prev/active/next pages live in the DOM, so even a
+   1,400-page novel stays featherlight while keeping the 3D page-turn look. */
+function renderBook() {
+  const container = document.getElementById('book-page-slider');
+  if (!container || currentBookPages.length === 0) return;
+  container.innerHTML = '';
+  for (let i = Math.max(0, currentBookPageIndex - 1); i <= Math.min(currentBookPages.length - 1, currentBookPageIndex + 1); i++) {
+    const pageDiv = document.createElement('div');
+    pageDiv.className = 'book-page ' + (i < currentBookPageIndex ? 'page-prev' : i === currentBookPageIndex ? 'page-active' : 'page-next');
+    pageDiv.innerHTML = currentBookPages[i];
+    container.appendChild(pageDiv);
+  }
+  document.getElementById('book-progress-text').innerText = 'Page ' + (currentBookPageIndex + 1) + ' of ' + currentBookPages.length;
 }
 
 function turnPage(direction) {
-  if (direction === 'next') { if (currentBookPageIndex < bookPages.length - 1) { currentBookPageIndex++; triggerHaptic('page'); stats.pagesTurned++; awardXP('page'); } else { showToast("End of book reached"); return; } }
-  else if (direction === 'prev') { if (currentBookPageIndex > 0) { currentBookPageIndex--; triggerHaptic('page'); } else { return; } }
-  renderBook();
+  if (!currentBook) return;
+  const container = document.getElementById('book-page-slider');
+  if (direction === 'next') {
+    if (currentBookPageIndex >= currentBookPages.length - 1) { showToast("End of book reached"); return; }
+    const active = container.querySelector('.page-active');
+    const next = container.querySelector('.page-next');
+    currentBookPageIndex++;
+    if (active) { active.classList.remove('page-active'); active.classList.add('page-prev'); }
+    if (next) { next.classList.remove('page-next'); next.classList.add('page-active'); }
+    triggerHaptic('page'); stats.pagesTurned++; awardXP('page');
+  } else if (direction === 'prev') {
+    if (currentBookPageIndex <= 0) return;
+    const active = container.querySelector('.page-active');
+    const prev = container.querySelector('.page-prev');
+    currentBookPageIndex--;
+    if (active) { active.classList.remove('page-active'); active.classList.add('page-next'); }
+    if (prev) { prev.classList.remove('page-prev'); prev.classList.add('page-active'); }
+    triggerHaptic('page');
+  }
+  document.getElementById('book-progress-text').innerText = 'Page ' + (currentBookPageIndex + 1) + ' of ' + currentBookPages.length;
+  rememberProgress();
+  clearTimeout(turnPage._t);
+  turnPage._t = setTimeout(renderBook, 750); // rebuild 3-page window after the flip completes
 }
 
 function handleTouchStart(e) { touchStartX = e.changedTouches[0].screenX; }
@@ -438,7 +616,7 @@ function switchTab(tab) {
   const topBar = document.getElementById('top-bar'); const feedContainer = document.getElementById('feed-container');
   const oasisView = document.getElementById('oasis-view'); const booksView = document.getElementById('books-view');
   if (tab === 'oasis') { topBar.style.display = 'none'; feedContainer.style.display = 'none'; booksView.style.display = 'none'; oasisView.style.display = 'flex'; setupDailyChallenge(); renderSavedQuotesList(); renderLetters(); renderPodcasts(); renderStats(); }
-  else if (tab === 'books') { topBar.style.display = 'none'; feedContainer.style.display = 'none'; oasisView.style.display = 'none'; booksView.style.display = 'flex'; renderBook(); }
+  else if (tab === 'books') { topBar.style.display = 'none'; feedContainer.style.display = 'none'; oasisView.style.display = 'none'; booksView.style.display = 'flex'; showBooksTab(); }
   else { topBar.style.display = 'flex'; document.getElementById('filter-container').style.display = 'flex'; feedContainer.style.display = 'block'; oasisView.style.display = 'none'; booksView.style.display = 'none'; renderFeed(); }
 }
 
@@ -453,34 +631,64 @@ function resetToStreamFeed() { activeFilter = 'all'; document.querySelectorAll('
 function scrollToPacerCard() { if (currentTab !== 'stream') switchTab('stream'); setFilter('all'); setTimeout(() => { const pacerCard = document.querySelector('.pacer-card-root'); if (pacerCard) pacerCard.scrollIntoView({ behavior: 'smooth' }); }, 150); }
 
 /* ==========================================================================
-   10. SOUND SHIELD (procedural rain — fully offline, no files)
+   10. SOUND SHIELD — local forest-rain ambience (audio/haven-ambient.mp3)
+   Replaces the old procedural rain generator. One reusable <audio> element,
+   looped, routed through a Web Audio gain node for premium fade in/out
+   (plain playback fallback). Starts only on user tap — iOS autoplay safe.
    ========================================================================== */
-function toggleSoundShield() {
-  const shieldBtn = document.getElementById('sound-shield-btn'); const shieldBtnText = document.getElementById('sound-btn-text');
-  if (isShieldPlaying) {
-    if (audioCtx) { audioCtx.close().then(() => { audioCtx = null; noiseNode = null; filterNode = null; isShieldPlaying = false; shieldBtn.classList.remove('active-shield'); shieldBtnText.innerText = "Sound Shield"; showToast("Sound Shield deactivated"); triggerHaptic('tick'); }); }
-  } else {
-    try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const bufferSize = 2 * audioCtx.sampleRate; const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); const output = noiseBuffer.getChannelData(0);
-      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-      for (let i = 0; i < bufferSize; i++) {
-        const white = Math.random() * 2 - 1;
-        b0 = 0.99886 * b0 + white * 0.0555179; b1 = 0.99332 * b1 + white * 0.0750759; b2 = 0.96900 * b2 + white * 0.1538520; b3 = 0.86650 * b3 + white * 0.3104856; b4 = 0.55000 * b4 + white * 0.5329522; b5 = -0.7616 * b5 - white * 0.0168980;
-        output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362; output[i] *= 0.08; b6 = white * 0.115926;
-      }
-      noiseNode = audioCtx.createBufferSource(); noiseNode.buffer = noiseBuffer; noiseNode.loop = true;
-      filterNode = audioCtx.createBiquadFilter(); filterNode.type = 'lowpass'; filterNode.frequency.value = 1100;
-      const highPass = audioCtx.createBiquadFilter(); highPass.type = 'highpass'; highPass.frequency.value = 250;
-      const lfo = audioCtx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.12;
-      const lfoGain = audioCtx.createGain(); lfoGain.gain.value = 350;
-      lfo.connect(lfoGain); lfoGain.connect(filterNode.frequency); lfo.start();
-      noiseNode.connect(highPass); highPass.connect(filterNode); filterNode.connect(audioCtx.destination);
-      noiseNode.start(0); isShieldPlaying = true;
-      shieldBtn.classList.add('active-shield'); shieldBtnText.innerText = "Shield Active"; showToast("Sound Shield activated (Heavy Rain)"); triggerHaptic('heavy');
-    } catch (e) { showToast("Audio context not supported on this browser"); }
-  }
+let shieldAudio = null, shieldCtx = null, shieldGain = null;
+
+function initShieldAudio() {
+  if (shieldAudio) return;
+  shieldAudio = new Audio('./audio/haven-ambient.mp3');
+  shieldAudio.loop = true;
+  shieldAudio.preload = 'auto';
+  try {
+    shieldCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const srcNode = shieldCtx.createMediaElementSource(shieldAudio);
+    shieldGain = shieldCtx.createGain();
+    srcNode.connect(shieldGain); shieldGain.connect(shieldCtx.destination);
+  } catch (e) { shieldCtx = null; shieldGain = null; }
 }
+
+function shieldFade(target, seconds) {
+  if (!shieldGain || !shieldCtx) return;
+  const now = shieldCtx.currentTime;
+  shieldGain.gain.cancelScheduledValues(now);
+  shieldGain.gain.setValueAtTime(shieldGain.gain.value, now);
+  shieldGain.gain.linearRampToValueAtTime(target, now + seconds);
+}
+
+async function startSoundShield(quiet) {
+  initShieldAudio();
+  try {
+    if (shieldCtx && shieldCtx.state === 'suspended') await shieldCtx.resume();
+    if (shieldGain) shieldGain.gain.value = 0;
+    await shieldAudio.play();
+  } catch (e) { showToast('Tap the Sound Shield button to start audio'); return false; }
+  shieldFade(1, 1.5);
+  isShieldPlaying = true;
+  const shieldBtn = document.getElementById('sound-shield-btn'); const shieldBtnText = document.getElementById('sound-btn-text');
+  if (shieldBtn) { shieldBtn.classList.add('active-shield'); shieldBtnText.innerText = 'Shield Active'; }
+  if (!quiet) { showToast('Sound Shield activated (Forest Rain)'); triggerHaptic('heavy'); }
+  return true;
+}
+
+function stopSoundShield(quiet) {
+  if (!shieldAudio) return;
+  isShieldPlaying = false;
+  if (shieldGain) {
+    shieldFade(0, 1.2);
+    setTimeout(() => { if (!isShieldPlaying && shieldAudio) shieldAudio.pause(); }, 1250);
+  } else {
+    shieldAudio.pause();
+  }
+  const shieldBtn = document.getElementById('sound-shield-btn'); const shieldBtnText = document.getElementById('sound-btn-text');
+  if (shieldBtn) { shieldBtn.classList.remove('active-shield'); shieldBtnText.innerText = 'Sound Shield'; }
+  if (!quiet) { showToast('Sound Shield deactivated'); triggerHaptic('tick'); }
+}
+
+function toggleSoundShield() { if (isShieldPlaying) stopSoundShield(); else startSoundShield(); }
 
 /* ==========================================================================
    11. BREATHING PACER — with rolling haptics + cycle XP
@@ -769,10 +977,16 @@ async function downloadPodcast(url, title) {
 /* ==========================================================================
    15. AMBIENT STARFIELD & STEALTH MODE
    ========================================================================== */
-function toggleAmbientStarfield(activate) {
+async function toggleAmbientStarfield(activate) {
   const overlay = document.getElementById('ambient-starfield-overlay'); isAmbientActive = activate;
-  if (activate) { overlay.style.display = 'flex'; initStarfield(); if (!isShieldPlaying) toggleSoundShield(); triggerHaptic('heavy'); }
-  else { overlay.style.display = 'none'; if (animationFrameId) cancelAnimationFrame(animationFrameId); stars = []; triggerHaptic('tick'); }
+  if (activate) {
+    overlay.style.display = 'flex'; initStarfield(); triggerHaptic('heavy');
+    if (!isShieldPlaying) ambientAutoStarted = await startSoundShield(true);
+    else ambientAutoStarted = false;
+  } else {
+    overlay.style.display = 'none'; if (animationFrameId) cancelAnimationFrame(animationFrameId); stars = []; triggerHaptic('tick');
+    if (ambientAutoStarted) { stopSoundShield(true); ambientAutoStarted = false; }
+  }
 }
 function initStarfield() {
   canvas = document.getElementById('starfield-canvas'); ctx = canvas.getContext('2d'); resizeCanvas(); window.addEventListener('resize', resizeCanvas);
@@ -878,6 +1092,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   startTimeTracking();
 
   await loadContentData();
+  await loadBooksCatalog();
   renderFeed();
   setupParallax();
 
