@@ -360,6 +360,48 @@ body { display: flex; justify-content: center; align-items: center; background-i
 @keyframes fill-loader { 0% { width: 0%; } 30% { width: 40%; } 70% { width: 85%; } 100% { width: 100%; } }
 
 /* ==========================================================================
+   8b. HAVEN BOOKSHELF & MULTI-BOOK READER
+   ========================================================================== */
+#bookshelf-view { display: flex; flex-direction: column; flex-grow: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; gap: 0.75rem; padding-bottom: 1.5rem; }
+#bookshelf-view::-webkit-scrollbar { display: none; }
+#bookshelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.9rem; }
+.book-tile { cursor: pointer; transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1); }
+.book-tile:active { transform: scale(0.96); }
+.book-tile-cover { position: relative; width: 100%; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden; background: linear-gradient(150deg, #1c2331, #0d1018); border: 1px solid rgba(255, 255, 255, 0.07); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), inset 4px 0 8px -5px rgba(255, 255, 255, 0.12); }
+.book-tile-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover-fallback-title { display: none; }
+.book-tile-cover.cover-fallback { display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.book-tile-cover.cover-fallback .cover-fallback-title { display: block; font-family: var(--font-serif); font-size: 0.95rem; line-height: 1.45; color: var(--accent-gold); text-align: center; }
+.book-tile-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(0, 0, 0, 0.55); }
+.book-tile-bar div { height: 100%; background: linear-gradient(to right, var(--accent-sage), var(--accent-gold)); }
+.book-tile-title { font-size: 0.78rem; font-weight: 700; color: var(--text-primary); margin-top: 0.55rem; line-height: 1.3; }
+.book-tile-author { font-size: 0.65rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+.continue-card { display: flex; align-items: center; gap: 0.85rem; background: linear-gradient(135deg, rgba(255, 183, 77, 0.07), rgba(255, 255, 255, 0.02)); border: 1px dashed rgba(255, 183, 77, 0.35); border-radius: 14px; padding: 0.8rem 1rem; cursor: pointer; transition: transform 0.2s; }
+.continue-card:active { transform: scale(0.98); }
+.continue-thumb { width: 44px; height: 62px; border-radius: 6px; overflow: hidden; flex-shrink: 0; background: #1c2331; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1px solid rgba(255, 255, 255, 0.08); }
+.continue-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.continue-info { flex-grow: 1; min-width: 0; }
+.continue-label { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-gold); margin-bottom: 0.25rem; }
+.continue-title { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.continue-progress { font-size: 0.65rem; color: var(--text-muted); margin-top: 0.2rem; }
+.continue-resume { flex-shrink: 0; font-size: 0.7rem; font-weight: 800; color: var(--accent-gold); }
+
+#book-reader-view { display: none; flex-direction: column; flex-grow: 1; min-height: 0; }
+.reader-header { display: flex; align-items: center; gap: 0.75rem; padding-bottom: 0.65rem; margin-bottom: 0.65rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); flex-shrink: 0; }
+.reader-back-btn { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--accent-gold); padding: 0.4rem 0.85rem; border-radius: 9999px; font-size: 0.72rem; font-weight: 800; cursor: pointer; flex-shrink: 0; font-family: var(--font-sans); }
+.reader-back-btn:active { transform: scale(0.94); }
+.reader-title-block { min-width: 0; }
+.reader-book-title { font-size: 0.88rem; font-weight: 800; color: #FFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reader-book-author { font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.15rem; }
+#book-reader-view .book-container { height: auto; flex-grow: 1; min-height: 0; }
+
+/* Sanitized plain-text book pages — comfortable reading size */
+.txt-page { padding-bottom: 0.5rem; }
+.txt-para { font-size: 0.92rem; line-height: 1.8; color: var(--text-primary); margin-bottom: 1.1rem; }
+.txt-heading { font-family: var(--font-serif); font-size: 1.05rem; color: var(--accent-gold); margin: 0.75rem 0 1rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.5rem; letter-spacing: 0.03em; }
+
+/* ==========================================================================
    9. iOS HAPTIC OVERLAYS
    Invisible native switch inputs injected by app.js inside tap targets.
    A direct finger-toggle fires the Taptic Engine on iOS 17.4+ (incl. 26.5+,
