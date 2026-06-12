@@ -270,9 +270,9 @@ function createEmptyState() {
    playback pauses the moment a card scrolls away (battery friendly).
    ========================================================================== */
 const CATEGORY_VIDEOS = {
-  'card-sanctuary': './assets/video/sanctuary-bg.mp4',
-  'card-neuro':     './assets/video/neuro-bg.mp4',
-  'card-satire':    './assets/video/satire-bg.mp4'
+  'card-sanctuary': './video/sanctuary-bg.mp4',
+  'card-neuro':     './video/neuro-bg.mp4',
+  'card-satire':    './video/satire-bg.mp4'
 };
 
 function renderFeed(appendMore = false) {
