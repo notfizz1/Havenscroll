@@ -1,4 +1,4 @@
-const CACHE_NAME = 'havenscroll-cache-v2.1.2';
+const CACHE_NAME = 'havenscroll-cache-v2.2.0';
 
 // Everything the sanctuary needs to run with zero network
 const ASSETS_TO_CACHE = [
@@ -11,6 +11,8 @@ const ASSETS_TO_CACHE = [
   './fonts/Inter-Variable.ttf',
   './fonts/Inter-Italic-Variable.ttf',
   './audio/splash-sound.mp3',
+  './audio/haven-ambient.mp3',
+  './books/books.json',
   './video/sanctuary-bg.mp4',
   './video/neuro-bg.mp4',
   './video/satire-bg.mp4',
@@ -21,11 +23,20 @@ const ASSETS_TO_CACHE = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache =>
-      // addAll fails atomically if one asset 404s (e.g. icons not deployed yet),
-      // so cache each item individually and tolerate misses.
-      Promise.all(ASSETS_TO_CACHE.map(url => cache.add(url).catch(() => null)))
-    )
+    caches.open(CACHE_NAME).then(async cache => {
+      // Cache each core asset individually and tolerate misses.
+      await Promise.all(ASSETS_TO_CACHE.map(url => cache.add(url).catch(() => null)));
+      // Then cache every book (.txt + .png) listed in the catalog, so new
+      // books only require a books.json edit — no sw.js change needed.
+      try {
+        const res = await fetch('./books/books.json', { cache: 'no-store' });
+        const catalog = await res.json();
+        const bookFiles = (catalog.books || [])
+          .flatMap(b => [b.txt, b.cover])
+          .filter(p => p && p.length);
+        await Promise.all(bookFiles.map(url => cache.add(url).catch(() => null)));
+      } catch (e) { /* catalog missing — core app still works */ }
+    })
   );
 });
 
@@ -47,7 +58,7 @@ self.addEventListener('fetch', event => {
 
   // NETWORK-FIRST for the app shell + content — fresh when online,
   // cached when offline. (v1 served these network-only; v2 falls back.)
-  const networkFirst = ['index.html', 'app.js', 'style.css', 'data.json', 'version.json'];
+  const networkFirst = ['index.html', 'app.js', 'style.css', 'data.json', 'version.json', 'books.json'];
   const isNetworkFirst = networkFirst.some(p => url.pathname.endsWith(p))
     || url.pathname === '/'
     || url.pathname.endsWith('/');
