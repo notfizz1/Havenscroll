@@ -4,323 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Haven Scroll - Your Minimalist Offline Sanctuary</title>
-  <style>
-    /* ==========================================================================
-       1. GLOBAL ARCHITECTURE & DESIGN TOKENS
-       ========================================================================== */
-    :root {
-      --bg-midnight: #0A0E17; --bg-card: #161B26; --bg-canvas: #05070a;
-      --text-primary: #E2E8F0; --text-muted: #94A3B8;
-      --accent-gold: #FFB74D; --accent-gold-glow: rgba(255, 183, 77, 0.15);
-      --accent-sage: #81C784; --accent-sage-glow: rgba(129, 199, 132, 0.15);
-      --accent-silver: #A1A1AA; --accent-silver-glow: rgba(161, 161, 170, 0.15);
-      --accent-indigo: #818CF8;
-      --font-serif: 'Playfair Display', 'Georgia', serif;
-      --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { width: 100%; height: 100%; background-color: var(--bg-canvas); color: var(--text-primary); font-family: var(--font-sans); overflow: hidden; }
-    body { display: flex; justify-content: center; align-items: center; background-image: radial-gradient(circle at 10% 10%, rgba(129, 199, 132, 0.03) 0%, transparent 40%), radial-gradient(circle at 90% 90%, rgba(255, 183, 77, 0.03) 0%, transparent 40%); }
-
-    /* ==========================================================================
-       2. APP CONTAINER & SPLASH SCREEN
-       ========================================================================== */
-    #app-wrapper { width: 100%; height: 100%; max-width: 480px; background-color: var(--bg-midnight); position: relative; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); border-left: 1px solid rgba(255, 255, 255, 0.03); border-right: 1px solid rgba(255, 255, 255, 0.03); }
-    @media (min-width: 481px) { #app-wrapper { height: 92vh; max-height: 880px; border-radius: 36px; border: 8px solid #1c2331; outline: 2px solid rgba(255, 255, 255, 0.05); } }
-
-    #splash-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-midnight); z-index: 999; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 5rem 2rem 3rem 2rem; transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s; text-align: center; }
-    #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-    .splash-logo { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; margin-top: auto; }
-    .logo-wrapper { position: relative; display: inline-block; }
-    .splash-title-main { font-weight: 900; font-size: 3rem; letter-spacing: -0.04em; color: #FFF; position: relative; z-index: 2; text-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-    .splash-title-main span { color: var(--accent-gold); }
-    .splash-title-shadow { position: absolute; top: 3px; left: -3px; font-weight: 900; font-size: 3rem; letter-spacing: -0.04em; color: rgba(129, 199, 132, 0.4); z-index: 1; user-select: none; }
-    .splash-pill { background: rgba(255, 183, 77, 0.08); border: 1px solid rgba(255, 183, 77, 0.15); color: var(--accent-gold); padding: 0.4rem 1.2rem; border-radius: 9999px; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; }
-    .splash-subtitle { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; max-width: 260px; }
-    .splash-loader-container { width: 120px; height: 2px; background: rgba(255, 255, 255, 0.04); border-radius: 999px; overflow: hidden; margin-top: auto; margin-bottom: auto; }
-    .splash-loader-bar { width: 0%; height: 100%; background: linear-gradient(to right, var(--accent-sage), var(--accent-gold)); animation: fill-loader 2.1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    .splash-footer { font-size: 0.65rem; color: rgba(255, 255, 255, 0.12); letter-spacing: 0.4em; }
-
-    /* ==========================================================================
-       3. TOP APP BAR & FILTERS
-       ========================================================================== */
-    #top-bar { flex-shrink: 0; background: linear-gradient(to bottom, var(--bg-midnight) 85%, transparent); z-index: 10; padding: 1.5rem 1.5rem 1rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-    .top-meta { display: flex; justify-content: space-between; align-items: center; }
-    .brand-logo { font-weight: 900; font-size: 1.4rem; letter-spacing: -0.03em; color: #FFF; }
-    .brand-logo span { color: var(--accent-gold); }
-    .top-action-bar { display: flex; align-items: center; gap: 0.4rem; }
-    .header-btn { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-muted); font-size: 0.68rem; font-weight: 700; padding: 0.35rem 0.65rem; border-radius: 9999px; cursor: pointer; display: flex; align-items: center; gap: 0.25rem; transition: all 0.2s; }
-    .header-btn:active { transform: scale(0.95); }
-    .header-btn.active-pacer { background: rgba(129, 199, 132, 0.08); border-color: rgba(129, 199, 132, 0.2); color: var(--accent-sage); }
-    .header-btn.active-shield { background: rgba(129, 140, 248, 0.12); border-color: rgba(129, 140, 248, 0.3); color: var(--accent-indigo); box-shadow: 0 0 10px rgba(129, 140, 248, 0.2); animation: heartbeat 2.5s ease-in-out infinite; }
-    .stealth-btn { width: 26px; height: 26px; border-radius: 50%; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-    .stealth-btn:hover { color: var(--text-primary); background: rgba(255, 255, 255, 0.08); }
-    
-    .filter-row { display: flex; gap: 0.45rem; overflow-x: auto; scrollbar-width: none; padding-bottom: 0.2rem; }
-    .filter-row::-webkit-scrollbar { display: none; }
-    .filter-pill { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); color: var(--text-muted); padding: 0.45rem 0.9rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
-    .filter-pill.active { color: var(--text-primary); background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.15); }
-    .filter-pill.active[data-filter="all"] { border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.1); }
-    .filter-pill.active[data-filter="sanctuary"] { border-color: var(--accent-gold); background: var(--accent-gold-glow); color: var(--accent-gold); }
-    .filter-pill.active[data-filter="neuro"] { border-color: var(--accent-sage); background: var(--accent-sage-glow); color: var(--accent-sage); }
-    .filter-pill.active[data-filter="satire"] { border-color: var(--accent-silver); background: var(--accent-silver-glow); color: var(--accent-silver); }
-
-    /* ==========================================================================
-       4. MAIN QUOTES FEED CONTAINER
-       ========================================================================== */
-    #feed-container { flex-grow: 1; overflow-y: scroll; scroll-snap-type: y mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; position: relative; }
-    #feed-container::-webkit-scrollbar { display: none; }
-
-    .card { width: 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; display: flex; flex-direction: column; justify-content: space-between; padding: 1.5rem 2rem 2rem 2rem; position: relative; background-color: var(--bg-card); overflow: hidden; border-bottom: 1px solid rgba(255, 255, 255, 0.01); }
-    .card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; z-index: 1; }
-    .card-glow { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 260px; height: 260px; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0; opacity: 0.3; }
-    .card-header { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.04); padding-bottom: 0.75rem; }
-    .track-meta { display: flex; flex-direction: column; }
-    .track-num { font-size: 0.65rem; font-family: var(--font-sans); letter-spacing: 0.15em; color: var(--text-muted); font-weight: 700; }
-    .track-origin { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); }
-    .card-badge { display: flex; align-items: center; gap: 0.3rem; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.3rem 0.6rem; border-radius: 6px; }
-    .card-body { position: relative; z-index: 2; margin: auto 0; display: flex; flex-direction: column; justify-content: center; }
-    .quote-mark { font-size: 4rem; line-height: 0; margin-bottom: 1rem; font-family: var(--font-serif); opacity: 0.12; user-select: none; }
-    .quote-text { font-size: clamp(1.05rem, 4.5vw, 1.35rem); line-height: 1.65; margin-bottom: 1.5rem; font-weight: 400; }
-    .quote-author { font-size: 0.82rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem; }
-    .quote-author::before { content: ""; width: 12px; height: 1px; display: inline-block; }
-    .card-footer { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.04); padding-top: 1rem; }
-    .curator-credits { display: flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; color: var(--text-muted); }
-    .credits-icon { color: #EF4444; font-size: 0.8rem; }
-    .meta-metrics { display: flex; gap: 1rem; }
-    .metric-item { font-size: 0.68rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.25rem; }
-    .action-btn-container { display: flex; align-items: center; }
-    .star-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 0.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .star-btn:active { transform: scale(0.85); }
-    .star-btn.saved { color: var(--accent-gold); filter: drop-shadow(0 0 4px rgba(255, 183, 77, 0.4)); }
-    .star-btn svg { width: 22px; height: 22px; }
-    .swipe-indicator { position: absolute; bottom: 0.5rem; left: 50%; transform: translateX(-50%); font-size: 0.65rem; letter-spacing: 0.2em; color: rgba(255, 255, 255, 0.12); text-transform: uppercase; animation: bounce 2s infinite; pointer-events: none; z-index: 5; }
-
-    .card-sanctuary { background: radial-gradient(circle at 50% 50%, #1e161c 0%, var(--bg-card) 100%); }
-    .card-sanctuary .card-glow { background: var(--accent-gold); }
-    .card-sanctuary .card-badge { background: var(--accent-gold-glow); color: var(--accent-gold); }
-    .card-sanctuary .quote-text { font-family: var(--font-serif); color: #F8FAFC; }
-    .card-sanctuary .quote-author { color: var(--accent-gold); }
-    .card-sanctuary .quote-author::before { background: var(--accent-gold); }
-
-    .card-neuro { background: radial-gradient(circle at 50% 50%, #112019 0%, var(--bg-card) 100%); }
-    .card-neuro .card-glow { background: var(--accent-sage); }
-    .card-neuro .card-badge { background: var(--accent-sage-glow); color: var(--accent-sage); }
-    .card-neuro .quote-text { font-family: var(--font-sans); font-weight: 300; color: #F1F5F9; }
-    .card-neuro .quote-author { color: var(--accent-sage); }
-    .card-neuro .quote-author::before { background: var(--accent-sage); }
-
-    .card-satire { background: radial-gradient(circle at 50% 50%, #1c202a 0%, var(--bg-card) 100%); }
-    .card-satire .card-glow { background: var(--accent-silver); }
-    .card-satire .card-badge { background: var(--accent-silver-glow); color: var(--accent-silver); }
-    .card-satire .quote-text { font-family: var(--font-sans); font-weight: 400; font-style: italic; color: #E2E8F0; }
-    .card-satire .quote-author { color: var(--accent-silver); }
-    .card-satire .quote-author::before { background: var(--accent-silver); }
-
-    /* ==========================================================================
-       5. 3D BOOK READER VIEW
-       ========================================================================== */
-    #books-view { display: none; flex-grow: 1; height: 0; padding: 1.5rem; background: radial-gradient(circle at 50% 50%, #0d1321 0%, var(--bg-midnight) 100%); flex-direction: column; justify-content: space-between; position: relative; }
-    .book-container { position: relative; width: 100%; height: 82%; background: #131722; border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 20px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; perspective: 2500px; overflow: visible !important; }
-    .book-container::after { content: ""; position: absolute; top: 0; left: 0; bottom: 0; width: 100%; background: linear-gradient(to right, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.02) 20%, transparent 100%); z-index: 5; pointer-events: none; border-radius: 20px 20px 0 0; opacity: 0; transition: opacity 0.4s ease; }
-    .book-page-slider { position: relative; width: 100%; flex-grow: 1; transform-style: preserve-3d; border-radius: 20px 20px 0 0; perspective-origin: right center; }
-    .book-page::before { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(rgba(255, 255, 255, 0.005) 1px, transparent 1px); background-size: 100% 1.8rem; pointer-events: none; z-index: 1; border-radius: 20px 20px 0 0; opacity: 1; transition: opacity 0.3s; }
-    .book-page::after { content: ""; position: absolute; top: 0; left: 3rem; right: 0; bottom: 0; background: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.06) 100%); opacity: 0; transition: opacity 0.3s; z-index: 20; pointer-events: none; }
-    .book-page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 1.75rem 1.75rem 1.75rem 3rem; display: flex; flex-direction: column; justify-content: flex-start; transition: transform 0.7s cubic-bezier(0.4, 0.0, 0.2, 1), opacity 0.5s ease; opacity: 0; pointer-events: none; overflow-y: auto; transform-origin: left center; backface-visibility: hidden; background: linear-gradient(to right, #0d1018 0%, #131722 6%, #131722 100%); border-radius: 20px 20px 0 0; }
-    .book-page::-webkit-scrollbar { display: none; }
-    .book-page.page-prev { transform: rotateY(-110deg); opacity: 0; z-index: 10; box-shadow: -10px 0 20px rgba(0,0,0,0.5); }
-    .book-page.page-prev::after { opacity: 1; }
-    .book-page.page-active { transform: rotateY(0deg); opacity: 1; z-index: 5; pointer-events: auto; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
-    .book-page.page-active + .book-page.page-next::before { background: radial-gradient(circle at 100% 0%, rgba(0,0,0,0.15) 0%, transparent 60%) !important; opacity: 1; }
-    .book-page.page-next { transform: rotateY(0deg); opacity: 0; z-index: 1; }
-    .tap-zone-left, .tap-zone-right { position: absolute; top: 0; width: 15%; height: 100%; z-index: 10; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s, background 0.2s; color: var(--text-muted); font-size: 1.2rem; user-select: none; }
-    .tap-zone-left { left: 0; border-top-left-radius: 20px; }
-    .tap-zone-right { right: 0; border-top-right-radius: 20px; }
-    .book-container:hover .tap-zone-left, .book-container:hover .tap-zone-right { opacity: 0.15; }
-    .tap-zone-left:hover, .tap-zone-right:hover { opacity: 0.65 !important; background: rgba(255, 255, 255, 0.02); }
-    .book-pagination { height: 44px; border-top: 1px solid rgba(255, 255, 255, 0.03); display: flex; justify-content: space-between; align-items: center; padding: 0 1.5rem; background: rgba(10, 14, 23, 0.4); font-size: 0.72rem; color: var(--text-muted); z-index: 12; font-weight: 600; border-radius: 0 0 20px 20px; }
-
-    /* ==========================================================================
-       6. THE OASIS TOOLKIT CONTAINER
-       ========================================================================== */
-    #oasis-view { display: none; flex-direction: column; flex-grow: 1; height: 100%; padding: 1.5rem 1.5rem 6rem 1.5rem; background: radial-gradient(circle at 50% 50%, #0d1321 0%, var(--bg-midnight) 100%); overflow-y: auto; -webkit-overflow-scrolling: touch; gap: 0.75rem; }
-    #oasis-view::-webkit-scrollbar { display: none; }
-    .oasis-header { margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.75rem; }
-    .oasis-title { font-size: 1.4rem; font-weight: 800; color: #FFF; }
-    .oasis-title span { color: var(--accent-gold); }
-    .oasis-subtitle { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; margin-top: 0.25rem; }
-
-    .oasis-drawer { background: var(--bg-card); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 12px; overflow: hidden; transition: all 0.3s ease; flex-shrink: 0; }
-    .drawer-trigger { width: 100%; background: none; border: none; padding: 1.15rem; display: flex; justify-content: space-between; align-items: center; color: var(--text-primary); font-weight: 700; font-size: 0.9rem; text-align: left; cursor: pointer; }
-    .drawer-trigger span:first-child { display: flex; align-items: center; gap: 0.5rem; }
-    .drawer-arrow { font-size: 0.7rem; color: var(--text-muted); transition: transform 0.3s; }
-    .drawer-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), padding 0.4s; padding: 0 1.15rem; }
-    .oasis-drawer.expanded .drawer-content { max-height: 2000px; padding-bottom: 1.25rem; }
-    .oasis-drawer.expanded .drawer-arrow { transform: rotate(90deg); }
-
-    /* Module Elements */
-    .challenge-panel { background: linear-gradient(135deg, rgba(255,183,77,0.06), rgba(255,255,255,0.02)); border: 1px dashed rgba(255, 183, 77, 0.3); border-radius: 16px; padding: 1.15rem; margin-bottom: 0.5rem; position: relative; overflow: hidden; flex-shrink: 0; }
-    .challenge-badge { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--accent-gold); letter-spacing: 0.1em; margin-bottom: 0.5rem; }
-    .challenge-text { font-size: 0.88rem; line-height: 1.5; color: var(--text-primary); margin-bottom: 0.85rem; }
-    .challenge-action { display: flex; justify-content: space-between; align-items: center; }
-    .challenge-btn { background: rgba(255, 183, 77, 0.15); border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 0.35rem 0.85rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-    .challenge-btn.completed { background: rgba(129, 199, 132, 0.15); border-color: var(--accent-sage); color: var(--accent-sage); }
-    
-    /* Podcast Module Styles */
-    .podcast-show-item { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; }
-    .podcast-show-header { padding: 1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: background 0.2s; }
-    .podcast-show-header:hover { background: rgba(255, 255, 255, 0.05); }
-    .podcast-thumb { width: 50px; height: 50px; border-radius: 6px; background: linear-gradient(135deg, var(--accent-sage), var(--accent-indigo)); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; overflow: hidden; flex-shrink: 0; }
-    .podcast-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
-    .podcast-info { flex-grow: 1; }
-    .podcast-title { font-weight: 700; font-size: 0.9rem; color: #FFF; }
-    .podcast-author { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; }
-    .podcast-episodes { display: none; background: rgba(0, 0, 0, 0.2); border-top: 1px solid rgba(255, 255, 255, 0.05); padding: 0.5rem; }
-    .podcast-show-item.open .podcast-episodes { display: block; }
-    
-    .episode-item { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
-    .episode-item:last-child { border-bottom: none; }
-    .ep-title { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem; }
-    .ep-meta { font-size: 0.65rem; color: var(--text-muted); }
-    .ep-actions { display: flex; gap: 0.5rem; }
-    .ep-btn { background: rgba(255,255,255,0.1); border: none; color: #FFF; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
-    .ep-btn:hover { background: var(--accent-gold); color: var(--bg-midnight); }
-
-    .saved-quote-card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 0.65rem; position: relative; }
-    .vibe-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.5rem; }
-    .vibe-btn { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 0.85rem; text-align: center; cursor: pointer; transition: all 0.2s; }
-    .vibe-icon { font-size: 1.2rem; margin-bottom: 0.35rem; }
-    .vibe-name { font-size: 0.75rem; font-weight: 700; color: var(--text-primary); }
-    .vibe-desc { font-size: 0.6rem; color: var(--text-muted); margin-top: 0.15rem; }
-    .vibe-btn.active[data-vibe="overwhelmed"] { background: rgba(255, 183, 77, 0.08); border-color: var(--accent-gold); }
-    .vibe-btn.active[data-vibe="restless"] { background: rgba(129, 199, 132, 0.08); border-color: var(--accent-sage); }
-    .vibe-btn.active[data-vibe="weary"] { background: rgba(129, 140, 248, 0.1); border-color: var(--accent-indigo); }
-    .vibe-btn.active[data-vibe="frustrated"] { background: rgba(161, 161, 170, 0.1); border-color: var(--accent-silver); }
-    .grounding-box { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 1rem; text-align: center; min-height: 140px; display: flex; flex-direction: column; justify-content: space-between; }
-    .grounding-number { font-size: 1.75rem; font-weight: 900; color: var(--accent-gold); }
-    .grounding-instruction { font-size: 0.85rem; line-height: 1.5; color: var(--text-primary); margin: 0.5rem 0; }
-    .grounding-step-info { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-    .grounding-control { margin-top: 0.75rem; }
-    .letter-item { background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 0.85rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; }
-    .letter-item:hover { background: rgba(255,255,255,0.03); }
-    .letter-title { font-size: 0.82rem; font-weight: 600; }
-    .letter-meta { font-size: 0.65rem; color: var(--accent-gold); }
-    .empty-state { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 2.5rem; background: radial-gradient(circle at 50% 50%, #151a24 0%, var(--bg-midnight) 100%); }
-    .empty-icon { width: 48px; height: 48px; color: var(--text-muted); opacity: 0.3; margin-bottom: 1.5rem; animation: float 4s ease-in-out infinite; }
-    .empty-title { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
-    .empty-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; max-width: 260px; margin-bottom: 1.5rem; }
-    .empty-cta { background: rgba(255, 183, 77, 0.08); border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 0.55rem 1.4rem; border-radius: 9999px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s; }
-
-    /* ==========================================================================
-       7. INTERACTIVE BREATHING PACER
-       ========================================================================== */
-    .pacer-container { display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 2rem 0; position: relative; height: 240px; }
-    .pacer-view-box { width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; position: relative; }
-    .pacer-circle-element { width: 100px; height: 100px; border-radius: 50%; background: var(--accent-sage); box-shadow: 0 0 30px rgba(129, 199, 132, 0.2); transform: scale(0.5); will-change: transform, background-color, box-shadow; display: flex; align-items: center; justify-content: center; position: relative; z-index: 2; transition: transform 0.5s ease, background-color 0.5s ease, box-shadow 0.5s ease; }
-    .pacer-aura-element { position: absolute; width: 100px; height: 100px; border-radius: 50%; background: rgba(129, 199, 132, 0.15); transform: scale(0.5); will-change: transform, background-color, opacity; z-index: 1; pointer-events: none; transition: transform 0.5s ease, background-color 0.5s ease, opacity 0.5s ease; }
-    .pacer-instruction-label { position: absolute; bottom: -10px; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-sage); text-align: center; width: 100%; height: 20px; will-change: opacity, color; transition: color 0.4s, opacity 0.3s; }
-    .pacer-view-box.inhale-primary .pacer-circle-element { transform: scale(1.15); background-color: var(--accent-sage); box-shadow: 0 0 45px rgba(129, 199, 132, 0.45); transition: transform 3000ms cubic-bezier(0.4, 0, 0.2, 1), background-color 800ms ease, box-shadow 1500ms ease; }
-    .pacer-view-box.inhale-primary .pacer-aura-element { transform: scale(1.4); background-color: rgba(129, 199, 132, 0.2); transition: transform 3200ms cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .pacer-view-box.inhale-secondary .pacer-circle-element { transform: scale(1.35); background-color: #AED581; box-shadow: 0 0 60px rgba(174, 213, 129, 0.6); transition: transform 700ms cubic-bezier(0.175, 0.885, 0.42, 1.35), background-color 200ms ease, box-shadow 400ms ease; }
-    .pacer-view-box.inhale-secondary .pacer-aura-element { transform: scale(1.75); background-color: rgba(174, 213, 129, 0.25); opacity: 0.8; transition: transform 700ms cubic-bezier(0.175, 0.885, 0.32, 1.5); }
-    .pacer-view-box.exhale-release .pacer-circle-element { transform: scale(0.5); background-color: #5C6BC0; box-shadow: 0 0 20px rgba(92, 107, 192, 0.15); transition: transform 5000ms cubic-bezier(0.22, 1, 0.36, 1), background-color 1500ms ease, box-shadow 3000ms ease; }
-    .pacer-view-box.exhale-release .pacer-aura-element { transform: scale(0.45); background-color: rgba(92, 107, 192, 0.05); opacity: 0.2; transition: transform 5000ms cubic-bezier(0.25, 1, 0.5, 1), opacity 4000ms ease; }
-
-    /* ==========================================================================
-       8. OTHER OVERLAYS & NAVIGATION
-       ========================================================================== */
-    #ambient-starfield-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #020408; z-index: 600; display: none; flex-direction: column; justify-content: space-between; padding: 2.5rem 2rem; }
-    #starfield-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
-    .ambient-header { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; }
-    .ambient-exit { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); padding: 0.45rem 1rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
-    .ambient-pacer-indicator { position: relative; z-index: 2; text-align: center; margin-top: auto; margin-bottom: auto; }
-    .ambient-pacer-text { font-size: 1.15rem; font-weight: 300; color: #FFF; letter-spacing: 0.05em; transition: opacity 0.5s; }
-    .ambient-footer { position: relative; z-index: 2; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.2); letter-spacing: 0.2em; text-transform: uppercase; }
-
-    #stealth-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #F9FAFB; color: #111827; z-index: 10000; display: none; flex-direction: column; padding: 2.5rem 1.5rem; overflow-y: auto; font-family: 'Georgia', Times, serif; line-height: 1.6; }
-    .stealth-header { border-bottom: 2px solid #D1D5DB; padding-bottom: 0.5rem; margin-bottom: 1.5rem; font-family: system-ui, sans-serif; }
-    .stealth-breadcrumbs { font-size: 0.7rem; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; }
-    .stealth-title { font-size: 1.6rem; font-weight: bold; color: #1F2937; margin-top: 0.25rem; }
-    .stealth-toc { background: #F3F4F6; border: 1px solid #E5E7EB; padding: 0.75rem; border-radius: 6px; font-size: 0.8rem; margin-bottom: 1.5rem; font-family: system-ui, sans-serif; }
-    .stealth-toc-title { font-weight: bold; margin-bottom: 0.25rem; }
-    .stealth-toc ul { list-style-type: none; padding-left: 0.5rem; }
-    .stealth-toc li { color: #2563EB; text-decoration: underline; margin: 0.25rem 0; cursor: pointer; }
-    .stealth-body p { font-size: 0.92rem; margin-bottom: 1.25rem; color: #374151; }
-    .stealth-footer-trigger { margin-top: auto; padding-top: 2rem; border-top: 1px solid #E5E7EB; font-size: 0.65rem; color: #9CA3AF; text-align: center; cursor: pointer; user-select: none; }
-
-    #letter-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 14, 23, 0.98); z-index: 500; display: none; flex-direction: column; padding: 3rem 2rem; overflow-y: auto; }
-    .modal-close { background: none; border: none; color: var(--accent-gold); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; cursor: pointer; align-self: flex-start; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.25rem; }
-    .modal-content { margin-top: auto; margin-bottom: auto; }
-    .modal-text { font-family: var(--font-serif); font-size: 1.2rem; line-height: 1.75; color: #FFF; margin-bottom: 2rem; }
-    .modal-signature { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 700; text-transform: uppercase; color: var(--accent-gold); letter-spacing: 0.1em; }
-
-    #bottom-nav { flex-shrink: 0; height: 68px; background: rgba(10, 14, 23, 0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid rgba(255, 255, 255, 0.04); display: flex; justify-content: space-around; align-items: center; padding: 0 1rem; z-index: 10; }
-    .tab-btn { background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 0.25rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); flex: 1; padding: 0.5rem 0; }
-    .tab-btn svg { width: 20px; height: 20px; stroke-width: 2px; stroke: currentColor; fill: none; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .tab-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
-    .tab-btn:hover { color: var(--text-primary); }
-    .tab-btn.active { color: var(--accent-gold); }
-    .tab-btn.active svg { transform: scale(1.15); filter: drop-shadow(0 0 4px var(--accent-gold-glow)); }
-
-    #toast { position: absolute; bottom: 84px; left: 50%; transform: translateX(-50%) translateY(15px); background-color: rgba(22, 27, 38, 0.96); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-primary); padding: 0.6rem 1.25rem; border-radius: 9999px; font-size: 0.78rem; font-weight: 600; box-shadow: 0 12px 24px -4px rgba(0,0,0,0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 999; pointer-events: none; opacity: 0; display: flex; align-items: center; gap: 0.4rem; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .toast-icon { color: var(--accent-gold); font-size: 0.9rem; }
-
-    /* GLOBAL AUDIO PLAYER */
-    #global-audio-player {
-      position: absolute; bottom: 68px; left: 0; width: 100%;
-      background: linear-gradient(to top, rgba(10,14,23,0.99), rgba(16,21,31,0.98));
-      border-top: 1px solid rgba(255,255,255,0.07);
-      padding: 0.9rem 1.1rem 0.85rem 1.1rem;
-      display: none; flex-direction: column; gap: 0.6rem;
-      z-index: 9; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 -12px 30px rgba(0,0,0,0.5);
-    }
-    .player-top-row { display: flex; align-items: center; gap: 0.75rem; }
-    .player-thumb { width: 38px; height: 38px; border-radius: 8px; background: linear-gradient(135deg, var(--accent-sage), var(--accent-indigo)); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
-    .player-info { flex-grow: 1; overflow: hidden; }
-    .player-title { font-size: 0.76rem; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; color: var(--text-primary); }
-    .player-sub { font-size: 0.62rem; color: var(--text-muted); margin-top: 0.15rem; }
-    .close-player-btn { background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; padding: 0.2rem; flex-shrink: 0; line-height: 1; transition: color 0.2s; }
-    .close-player-btn:hover { color: var(--text-primary); }
-
-    /* Progress / Scrubber */
-    .player-progress-row { display: flex; align-items: center; gap: 0.6rem; }
-    .player-time { font-size: 0.6rem; color: var(--text-muted); font-weight: 600; min-width: 30px; font-variant-numeric: tabular-nums; }
-    .player-time.right { text-align: right; }
-    .player-scrubber {
-      flex-grow: 1; -webkit-appearance: none; appearance: none;
-      height: 3px; border-radius: 9999px; cursor: pointer; outline: none;
-      background: rgba(255,255,255,0.1);
-    }
-    .player-scrubber::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 14px; height: 14px;
-      border-radius: 50%; background: var(--accent-gold);
-      cursor: pointer; box-shadow: 0 0 6px rgba(255,183,77,0.5);
-      transition: transform 0.15s;
-    }
-    .player-scrubber:active::-webkit-slider-thumb { transform: scale(1.3); }
-    .player-scrubber::-moz-range-thumb {
-      width: 14px; height: 14px; border-radius: 50%;
-      background: var(--accent-gold); border: none; cursor: pointer;
-    }
-
-    /* Controls row */
-    .player-controls-row { display: flex; align-items: center; justify-content: center; gap: 1.1rem; }
-    .player-skip-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.25rem; transition: color 0.2s; }
-    .player-skip-btn:active { transform: scale(0.9); color: var(--text-primary); }
-    .player-skip-btn svg { width: 22px; height: 22px; }
-    .player-skip-btn span { font-size: 0.5rem; letter-spacing: 0.05em; font-weight: 700; }
-    .play-pause-btn { background: var(--accent-gold); color: var(--bg-midnight); border: none; border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0; font-size: 1rem; }
-    .play-pause-btn:active { transform: scale(0.9); }
-    .player-speed-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 6px; padding: 0.3rem 0.5rem; font-size: 0.65rem; font-weight: 800; cursor: pointer; transition: all 0.2s; min-width: 36px; text-align: center; }
-    .player-speed-btn:active { background: rgba(255,183,77,0.12); border-color: var(--accent-gold); color: var(--accent-gold); }
-
-    @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); } 40% { transform: translateX(-50%) translateY(-6px); } 60% { transform: translateX(-50%) translateY(-3px); } }
-    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
-    @keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-    @keyframes fill-loader { 0% { width: 0%; } 30% { width: 40%; } 70% { width: 85%; } 100% { width: 100%; } }
-  </style>
+  <meta name="theme-color" content="#0A0E17">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
@@ -348,7 +35,7 @@
 
   <!-- PRIMARY APP WRAPPER -->
   <div id="app-wrapper">
-    <!-- SPLASH INTRO SCREEN -->
+    <!-- CINEMATIC SPLASH SCREEN -->
     <div id="splash-screen">
       <div class="splash-logo">
         <div class="splash-pill">Encrypted Offline Sanctuary</div>
@@ -358,6 +45,7 @@
       <div class="splash-loader-container"><div class="splash-loader-bar"></div></div>
       <div class="splash-footer">✦ 100% LOCAL PRIVACY ✦</div>
     </div>
+    <audio id="splash-audio" src="./assets/audio/splash-sound.mp3" preload="auto"></audio>
 
     <!-- GLOBAL TOP APP BAR -->
     <div id="top-bar">
@@ -398,21 +86,53 @@
     <!-- OASIS TOOLKIT -->
     <div id="oasis-view">
       <div class="oasis-header"><h2 class="oasis-title">Your <span>Oasis</span></h2><p class="oasis-subtitle">Tactile toolkit designed to block external noise, regain internal balance, and connect instantly offline.</p></div>
-      
+
       <div class="challenge-panel">
         <div class="challenge-badge">Your Micro-Task Today</div>
         <div class="challenge-text" id="challenge-display">Relax your shoulders, slightly part your teeth, and let your jaw completely unclench. Notice the weight on your seat.</div>
         <div class="challenge-action"><span style="font-size:0.68rem; color:var(--text-muted);">Completely offline</span><button class="challenge-btn" id="challenge-btn" onclick="completeDailyChallenge()">Complete Task</button></div>
       </div>
 
-      <!-- NEW: PODCAST MODULE FOR INDEXEDDB -->
+      <!-- PERSONAL STATS / JOURNEY -->
+      <div class="oasis-drawer" id="drawer-journey">
+        <button class="drawer-trigger" onclick="toggleDrawer('drawer-journey')"><span>🌱 Your Journey</span><span class="drawer-arrow">▶</span></button>
+        <div class="drawer-content">
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">Transparent statistics, stored only on this device. Nothing is tracked or sent anywhere.</p>
+          <div class="stats-grid">
+            <div class="stat-tile"><div class="stat-value" id="stat-time">0m</div><div class="stat-label">Time in Haven</div></div>
+            <div class="stat-tile"><div class="stat-value" id="stat-saved">0</div><div class="stat-label">Quotes Saved</div></div>
+            <div class="stat-tile"><div class="stat-value" id="stat-streak">0</div><div class="stat-label">Day Streak</div></div>
+            <div class="stat-tile"><div class="stat-value" id="stat-breaths">0</div><div class="stat-label">Breath Cycles</div></div>
+          </div>
+          <div class="level-row">
+            <div class="level-badge" id="level-badge">1</div>
+            <div class="level-info">
+              <div class="level-name" id="level-name">Seedling</div>
+              <div class="level-bar-track"><div class="level-bar-fill" id="level-bar"></div></div>
+              <div class="level-sub" id="level-sub">Quietly growing…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TACTILE WORRY STONE -->
+      <div class="oasis-drawer" id="drawer-stone">
+        <button class="drawer-trigger" onclick="toggleDrawer('drawer-stone')"><span>🪨 Worry Stone</span><span class="drawer-arrow">▶</span></button>
+        <div class="drawer-content">
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">Rest your thumb on the stone and rub slowly. Fluid ripples and soft vibrations follow your touch — a quiet anchor for restless hands.</p>
+          <div class="worry-stone-wrap" id="worry-stone-wrap">
+            <canvas id="worry-stone-canvas"></canvas>
+            <div class="worry-hint">Drag your finger across the stone</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PODCAST MODULE -->
       <div class="oasis-drawer" id="drawer-podcasts">
         <button class="drawer-trigger" onclick="toggleDrawer('drawer-podcasts')"><span>🎙️ Podcasts (Offline)</span><span class="drawer-arrow">▶</span></button>
         <div class="drawer-content">
           <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">Select an episode to play or share.</p>
-          <div id="podcast-container">
-            <!-- Rendered by JS -->
-          </div>
+          <div id="podcast-container"></div>
         </div>
       </div>
 
@@ -471,10 +191,8 @@
     <!-- HIDDEN NATIVE AUDIO ELEMENT FOR PODCASTS -->
     <audio id="native-audio" style="display:none;"></audio>
 
-    <!-- GLOBAL AUDIO PLAYER (Slides up when podcast plays) -->
+    <!-- GLOBAL AUDIO PLAYER -->
     <div id="global-audio-player">
-
-      <!-- Row 1: Thumb + Title + Close -->
       <div class="player-top-row">
         <div class="player-thumb">🎙️</div>
         <div class="player-info">
@@ -483,51 +201,31 @@
         </div>
         <button class="close-player-btn" onclick="closePodcastPlayer()">×</button>
       </div>
-
-      <!-- Row 2: Scrubber + timestamps -->
       <div class="player-progress-row">
         <span class="player-time" id="player-current">0:00</span>
-        <input type="range" class="player-scrubber" id="player-scrubber"
-               min="0" max="100" value="0" step="0.1"
-               oninput="onScrubberInput(this.value)"
-               onchange="onScrubberChange(this.value)">
+        <input type="range" class="player-scrubber" id="player-scrubber" min="0" max="100" value="0" step="0.1" oninput="onScrubberInput(this.value)" onchange="onScrubberChange(this.value)">
         <span class="player-time right" id="player-duration">0:00</span>
       </div>
-
-      <!-- Row 3: Skip back / Play / Skip forward / Speed -->
       <div class="player-controls-row">
         <button class="player-skip-btn" onclick="skipPodcast(-30)" title="Back 30s">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="1 4 1 10 7 10"></polyline>
-            <path d="M3.51 15a9 9 0 1 0 .49-4.95"></path>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.95"></path></svg>
           <span>30s</span>
         </button>
         <button class="player-skip-btn" onclick="skipPodcast(-10)" title="Back 10s">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="1 4 1 10 7 10"></polyline>
-            <path d="M3.51 15a9 9 0 1 0 .49-4.95"></path>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.95"></path></svg>
           <span>10s</span>
         </button>
         <button class="play-pause-btn" id="player-play-btn" onclick="togglePodcastPlay()">▶</button>
         <button class="player-skip-btn" onclick="skipPodcast(10)" title="Forward 10s">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-.49-4.95"></path>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-.49-4.95"></path></svg>
           <span>10s</span>
         </button>
         <button class="player-skip-btn" onclick="skipPodcast(30)" title="Forward 30s">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-.49-4.95"></path>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-.49-4.95"></path></svg>
           <span>30s</span>
         </button>
         <button class="player-speed-btn" id="player-speed-btn" onclick="cyclePlaybackSpeed()" title="Playback speed">1×</button>
       </div>
-
     </div>
 
     <!-- BOTTOM APP NAV BAR -->
@@ -547,732 +245,6 @@
     </div>
   </div>
 
-  <script>
-    /* ==========================================================================
-       1. DATASETS (Quotes, Books, Letters, Steps, Challenges, Podcasts)
-       ========================================================================== */
-    const baseCards = [
-      {id:1, category:"Inner Sanctuary", author:"Belal Assaad", text:"Your inner well-being is a sanctuary that no other human being holds the key to. No matter how much your external environment tries to dictate your steps, your clothes, or your choices, remember: they can only touch the surface. Your heart and your peace belong to you. Find your Sabr (patience) in the storm, for true freedom is built from within.", icon:"✦"},
-      {id:2, category:"Interactive Core", author:"Andrew Huberman", text:"PHYSIOLOGICAL SIGH PACER TRACK: Force-reset your autonomic nervous system from high alert state back to complete baseline calm using the biological cheat code below. Match your real breathing cycles smoothly with the tactile expanding geometry.", icon:"≈", isPacer:true},
-      {id:4, category:"Neuro-Sync", author:"Andrew Huberman", text:"You are not your thoughts. You are the one observing your thoughts. When frustration washes over you, take a mental step back. View it as a scene in a movie playing out in front of you. It is happening in your awareness, but it does not define who you are.", icon:"≈"},
-      {id:5, category:"Inner Sanctuary", author:"Quran 94:5–6", text:"'For indeed, with hardship comes ease.' It is a promise. The heavy chapter you are navigating right now is not permanent. It is merely a single page, not the whole book. Protect your energy, guard your inner peace, and trust that doors will open when the time is right.", icon:"✦"},
-      {id:7, category:"Neuro-Sync", author:"Andrew Huberman", text:"Circadian Alignment Protocol: View early morning light in your eyes. On a clear day, aim for 5-10 minutes. On a cloudy, overcast day, aim for 20-30 minutes. This lights up your melanopsin ganglion cells, initiating an instant cortisol surge to keep you awake and focused, whilst starting a countdown timer for healthy melatonin release exactly 16 hours later.", icon:"≈"},
-      {id:8, category:"Inner Sanctuary", author:"Belal Assaad", text:"The ultimate standard of maturity is to realize that when people judge or attempt to box you in, they are projecting their own inner chaos, fears, and conditioning. Do not inherit their limitations. Keep your focus anchored upward. Your value was already decreed before you were ever introduced to their expectations.", icon:"✦"},
-      {id:10, category:"Neuro-Sync", author:"Andrew Huberman", text:"The 'Gap and Gain' Framework: Human brains automatically measure progress against an idealized perfect state, sparking frustration. Shift this. Force yourself to measure backwards: contrast your current capability and mental fortitude with where you stood last year. This is where real motivation lives.", icon:"≈"},
-      {id:11, category:"Inner Sanctuary", author:"Islamic Wisdom", text:"In the quiet space between your breaths, there is a sacred sanctuary. When the noise of external expectations tries to define who you must be, sink deeper into your core. You are a deep, vast ocean, and the restrictions of others are merely temporary surface waves. Protect your water, stand firm, and wait for the calm.", icon:"✦"},
-      {id:13, category:"Neuro-Sync", author:"Andrew Huberman", text:"The Friction Law of Learning: Real neuroplasticity—the literal rewiring of your brain circuits—requires physical tension, frustration, and minor errors. When starting a complex habit or trying to focus under mental friction, remind yourself that the agitating feeling of discomfort is the biological signal that triggers neural adaptation.", icon:"≈"},
-      {id:14, category:"Inner Sanctuary", author:"Rumi", text:"Do not feel lonely, for the entire universe is inside you. Fall deeply in love with the peace of your soul, and remain there. The wound is the exact location where the Light enters you. Your spirit is entirely free, unbounded, and ready to fly long after the cages of life dissolve.", icon:"✦"},
-      {id:15, category:"Inner Sanctuary", author:"Belal Assaad", text:"True internal peace means silencing the validation-seeking voice inside you. When you move with pure intention, seeking only the pleasure of your Creator and the alignment of your soul, the negative commentary of creation loses its weight completely. Let them talk, while you remain anchored.", icon:"✦"},
-      {id:16, category:"Neuro-Sync", author:"Andrew Huberman", text:"Dopamine Optimization: Avoid stacking multiple dopamine triggers at once—such as looking at social media while listening to intense music and consuming caffeine simultaneously. Stacking creates an artificially high peak followed by a devastating crash in baseline motivation. Protect your baseline focus.", icon:"≈"},
-      {id:18, category:"Neuro-Sync", author:"Andrew Huberman", text:"Neuroscience Breakthrough: Deep within your brain lies the Anterior Midcingulate Cortex. This structure grows in volume when you force yourself to perform tasks you genuinely do not want to do, yet shrinks when you live in absolute comfort. Every time you do the hard thing anyway, you are literally building a bigger, stronger willpower center.", icon:"≈"},
-      {id:19, category:"Inner Sanctuary", author:"Islamic Wisdom", text:"Your heart is a vessel; if you fill it with the anxieties of tomorrow and the frustrations of today, there will be no room left for peace. Trust the plan designed for you. Protect your spiritual morning and evening spaces like an unbreachable fort. Everything else is temporary white noise.", icon:"✦"},
-      {id:21, category:"Neuro-Sync", author:"Andrew Huberman", text:"Adrenaline does not carry an emotional signal. When you feel a racing heart, sweat, or physical tension, your brain labels it as 'trapped' or 'angry'. Override the label. Tell yourself: 'My body is simply mobilizing fuel and energy.' Change the definition, and you dominate the reaction.", icon:"≈"},
-      {id:22, category:"Inner Sanctuary", author:"Islamic Wisdom", text:"No wall is high enough to hold a soaring spirit. No rule is tight enough to bind an intelligent mind. Close your eyes at night, let your physical location fade into dark space, and tap into the unbounded sky inside you. You are entirely free.", icon:"✦"},
-      {id:23, category:"Inner Sanctuary", author:"Sh. Yusuf al-Qaradawi", text:"The basic premise is that everything is permissible. Nothing is prohibited except what has been explicitly declared as haram in a clear and authentic text from God or His Messenger.", icon:"✦"},
-      {id:24, category:"Inner Sanctuary", author:"Sh. Yusuf al-Qaradawi", text:"To make the lawful prohibited, or the prohibited lawful, is tantamount to claiming partnership with God in His legislative authority.", icon:"✦"},
-      {id:25, category:"Inner Sanctuary", author:"Sh. Yusuf al-Qaradawi", text:"Islam has blocked all avenues leading to the prohibited. If something is forbidden, then any actions, means, and circumstances that lead to it are also forbidden.", icon:"✦"},
-      {id:26, category:"Inner Sanctuary", author:"Sh. Yusuf al-Qaradawi", text:"Good intentions do not make the unlawful acceptable. The end does not justify the means in Islamic law.", icon:"✦"},
-      {id:27, category:"Inner Sanctuary", author:"Sh. Yusuf al-Qaradawi", text:"Doubtful things should be avoided in order to keep one's religion and honor pure and untainted.", icon:"✦"},
-      {id:28, category:"Inner Sanctuary", author:"Abdul Rahman I. Doi", text:"Shariah is the clear path that leads man to spiritual and moral salvation. It is a complete code of life covering every aspect, from individual rituals to societal governance.", icon:"✦"},
-      {id:29, category:"Inner Sanctuary", author:"Abdul Rahman I. Doi", text:"The law in Islam is not a static set of rules, but a living guidance meant to uphold justice, mercy, and the overall well-being of humanity.", icon:"✦"},
-      {id:30, category:"Inner Sanctuary", author:"Abdul Rahman I. Doi", text:"The ultimate goal of Shariah is to protect five fundamental rights: faith, life, intellect, lineage, and property.", icon:"✦"},
-      {id:31, category:"Inner Sanctuary", author:"Abdul Rahman I. Doi", text:"Justice in Islam is an absolute duty, to be upheld even if it goes against oneself, one's parents, or one's kindred.", icon:"✦"},
-      {id:32, category:"Inner Sanctuary", author:"Abdul Rahman I. Doi", text:"Islamic law provides a harmonious balance between material progress and spiritual elevation, ensuring neither is sacrificed for the other.", icon:"✦"},
-      {id:33, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"The goal of Islamic jurisprudence is to provide a strict and scientific methodology for interpreting divine texts and applying them to new, contemporary situations.", icon:"✦"},
-      {id:34, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"The nature of justice in Islam is based on a careful balance between individual rights and the collective interest of society, guided by the overarching purposes of the law.", icon:"✦"},
-      {id:35, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"Legal interpretation requires not only deep textual understanding, but also a profound insight into the society and the era in which the law is to be applied.", icon:"✦"},
-      {id:36, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"The foundational texts provide the universal principles, while jurisprudence bridges the gap between unchanging divine intent and shifting human realities.", icon:"✦"},
-      {id:37, category:"Inner Sanctuary", author:"Imran Ahsan Khan Nyazee", text:"A jurist must understand the objectives of the law to prevent a rigid application of the letter from defeating the spirit of justice.", icon:"✦"},
-      {id:38, category:"Inner Sanctuary", author:"Muhammed Al Ubaidy", text:"Our inner self functions like a mirror; if it is covered with the dust of prejudice and ignorance, it can never reflect the pure light of truth and wisdom.", icon:"✦"},
-      {id:39, category:"Inner Sanctuary", author:"Muhammed Al Ubaidy", text:"Understanding oneself is the first step toward understanding the world. When you clear your inner mirror, your perception of your surroundings changes.", icon:"✦"},
-      {id:40, category:"Inner Sanctuary", author:"Muhammed Al Ubaidy", text:"True reflection is not about seeing what we want to see, but about having the courage to look at the face of our own flaws and working to heal them.", icon:"✦"},
-      {id:41, category:"Inner Sanctuary", author:"Muhammed Al Ubaidy", text:"Silence is the polish of the mirror; it is in quiet contemplation that the deepest truths of the soul become visible.", icon:"✦"},
-      {id:42, category:"Inner Sanctuary", author:"Muhammed Al Ubaidy", text:"Do not blame the mirror if it shows a fractured image; look instead at what you are presenting to it.", icon:"✦"},
-      {id:43, category:"Neuro-Sync", author:"Robert Kegan", text:"Human being is fundamentally a meaning-making activity. We do not just mechanically react to the world; we create the meaning that shapes how we experience it.", icon:"≈"},
-      {id:44, category:"Neuro-Sync", author:"Robert Kegan", text:"Psychological development is the continuous process where what was once 'Subject' — that which we are fused with and controlled by — becomes 'Object' — that which we can look at, reflect upon, and master.", icon:"≈"},
-      {id:45, category:"Neuro-Sync", author:"Robert Kegan", text:"Growth involves the loss of an old way of understanding the world before the new one has fully formed; it is a natural crisis of disorientation and rebirth.", icon:"≈"},
-      {id:46, category:"Neuro-Sync", author:"Robert Kegan", text:"People do not just have ideas; they are embedded in them. A shift in development is not just a change in what we think, but a change in how we think.", icon:"≈"},
-      {id:47, category:"Neuro-Sync", author:"Robert Kegan", text:"The evolutionary truce is the delicate balance between our need for connection with others and our need for distinct individual autonomy.", icon:"≈"},
-      {id:48, category:"Inner Sanctuary", author:"Marcus Tullius Cicero", text:"He who has a garden and a library, lacks nothing.", icon:"✦"},
-      {id:49, category:"Neuro-Sync", author:"Marcus Aurelius", text:"The soul is dyed the color of its thoughts.", icon:"≈"},
-      {id:50, category:"Neuro-Sync", author:"Seneca", text:"We suffer more often in imagination than in reality.", icon:"≈"},
-      {id:51, category:"Inner Sanctuary", author:"Blaise Pascal", text:"All of humanity's problems stem from man's inability to sit quietly in a room alone.", icon:"✦"},
-      {id:52, category:"Inner Sanctuary", author:"Henry David Thoreau", text:"A man is rich in proportion to the number of things which he can afford to let alone.", icon:"✦"},
-      {id:53, category:"Inner Sanctuary", author:"Socrates", text:"The secret of happiness, you see, is not found in seeking more, but in developing the capacity to enjoy less.", icon:"✦"},
-      {id:54, category:"Neuro-Sync", author:"Albert Einstein", text:"Look deep into nature, and then you will understand everything better.", icon:"≈"},
-      {id:55, category:"Inner Sanctuary", author:"Aristotle", text:"In all things of nature there is something of the marvelous.", icon:"✦"},
-      {id:56, category:"Neuro-Sync", author:"Leonardo da Vinci", text:"Small rooms or dwellings discipline the mind, large ones weaken it.", icon:"≈"},
-      {id:57, category:"Inner Sanctuary", author:"Epictetus", text:"Wealth consists not in having great possessions, but in having few wants.", icon:"✦"},
-      {id:58, category:"Inner Sanctuary", author:"Epicurus", text:"Do not spoil what you have by desiring what you have not; remember that what you now have was once among the things you only hoped for.", icon:"✦"},
-      {id:59, category:"Neuro-Sync", author:"Heraclitus", text:"There is nothing permanent except change.", icon:"≈"},
-      {id:60, category:"Dry Satire", author:"Confucius", text:"Life is really simple, but we insist on making it complicated.", icon:"❖"},
-      {id:61, category:"Inner Sanctuary", author:"Ralph Waldo Emerson", text:"To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment.", icon:"✦"},
-      {id:62, category:"Neuro-Sync", author:"Friedrich Nietzsche", text:"He who has a why to live can bear almost any how.", icon:"≈"},
-      {id:63, category:"Inner Sanctuary", author:"Pericles", text:"What you leave behind is not what is engraved in stone monuments, but what is woven into the lives of others.", icon:"✦"},
-      {id:64, category:"Inner Sanctuary", author:"Marcus Tullius Cicero", text:"A room without books is like a body without a soul.", icon:"✦"},
-      {id:65, category:"Inner Sanctuary", author:"Rumi", text:"Yesterday I was clever, so I wanted to change the world. Today I am wise, so I am changing myself.", icon:"✦"},
-      {id:66, category:"Inner Sanctuary", author:"Kahlil Gibran", text:"To understand the heart and mind of a person, look not at what he has already achieved, but at what he aspires to.", icon:"✦"},
-      {id:67, category:"Neuro-Sync", author:"Zhuangzi", text:"Happiness is the absence of the striving for happiness.", icon:"≈"},
-      {id:68, category:"Inner Sanctuary", author:"Plato", text:"The measure of a man is what he does with power.", icon:"✦"},
-      {id:69, category:"Dry Satire", author:"Italian Bach", text:"Nothing says 'genuine human emotion' quite like remembering to adjust your ring light before weeping on camera.", icon:"❖"},
-      {id:70, category:"Dry Satire", author:"Italian Bach", text:"I am convinced that some people view the internet not as a public forum, but as a personal diary they have accidentally read aloud to millions.", icon:"❖"},
-      {id:71, category:"Dry Satire", author:"Italian Bach", text:"My favorite genre of video is someone having a deep existential crisis, but making sure to add a trending audio underneath it for algorithm optimization.", icon:"❖"},
-      {id:72, category:"Dry Satire", author:"Italian Bach", text:"If there is one thing modern creators excel at, it is surviving a situation they completely fabricated for views.", icon:"❖"},
-      {id:73, category:"Dry Satire", author:"Italian Bach", text:"There is a terrifying level of confidence required to look at a camera, do absolutely nothing for fifteen seconds, and expect the internet to praise you for it.", icon:"❖"},
-      {id:74, category:"Dry Satire", author:"Italian Bach", text:"Stop sharing your family drama on TikTok. Go to therapy, or at the very least, a group chat.", icon:"❖"},
-      {id:75, category:"Dry Satire", author:"Italian Bach", text:"Thank you from the bottom of my organs.", icon:"❖"}
-    ];
-
-    const bookPages = [
-      {title:"The Lawful and the Prohibited in Islam", subtitle:"Cover Page", content:`<div style="text-align: center; margin-top: 2rem; padding: 1rem;"><div style="font-size: 0.72rem; color: var(--accent-gold); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1.5rem;">Oasis Library</div><h2 style="font-family: var(--font-serif); font-size: 1.7rem; line-height: 1.35; margin-bottom: 1rem; color: #FFF;">The Lawful and the Prohibited in Islam</h2><p style="font-size: 0.9rem; color: var(--accent-gold); font-weight: 500; letter-spacing: 0.05em; margin-bottom: 1rem;">An Essential Guide</p><div style="width: 40px; height: 1px; background: var(--accent-gold); margin: 1.5rem auto;"></div><p style="font-size: 0.82rem; color: var(--text-muted); font-style: italic; margin-bottom: 0.25rem;">Based on the work of</p><p style="font-weight: 700; color: var(--text-primary); letter-spacing: 0.05em;">SH YUSUF QARDAWI</p><div style="margin-top: 4.5rem; font-size: 0.72rem; color: var(--text-muted); animation: heartbeat 2s infinite;">Tap the right margin to start reading →</div></div>`},
-      {title:"Section 1: General Principles", subtitle:"Principles 1 – 4", content:`<p style="font-size: 0.72rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight:700;">Section 1: General Principles</p><h3 style="font-family: var(--font-serif); font-size: 1.1rem; margin-bottom: 1rem; color: #FFF; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">The Framework of Halal & Haram</h3><p style="font-size:0.8rem; color:var(--text-muted); line-height:1.4; margin-bottom:0.75rem; font-style:italic;">Islam provides a clear framework for what is permissible (Halal) and what is forbidden (Haram), built on foundational rules:</p><ul style="list-style-type: none; display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.85rem; line-height: 1.45;"><li><strong style="color: var(--accent-gold);">1. Basic Permissibility:</strong> Everything created by God is naturally permissible unless there is a clear, authentic text from the Quran or Sunnah that explicitly forbids it.</li><li><strong style="color: var(--accent-gold);">2. God's Right Alone:</strong> No human, ruler, or religious authority has the right to declare something Halal or Haram on their own whim.</li><li><strong style="color: var(--accent-gold);">3. Prohibiting Halal is Shirk:</strong> Elevating human opinions to the level of divine law is a form of associating partners with God.</li><li><strong style="color: var(--accent-gold);">4. Haram Linked to Harm:</strong> God only prohibits things that are inherently harmful, impure, or destructive to individuals or society.</li></ul>`},
-      {title:"Section 1: General Principles", subtitle:"Principles 5 – 8", content:`<p style="font-size: 0.72rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight:700;">Section 1: General Principles</p><h3 style="font-family: var(--font-serif); font-size: 1.1rem; margin-bottom: 1rem; color: #FFF; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">Divine Mercy & Intent</h3><ul style="list-style-type: none; display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.85rem; line-height: 1.45;"><li><strong style="color: var(--accent-gold);">5. Halal Eliminates Need for Haram:</strong> For every forbidden thing, God has provided a clean, permissible alternative (e.g., marriage instead of fornication, clean trade instead of usury).</li><li><strong style="color: var(--accent-gold);">6. Avenues to Haram are Haram:</strong> Anything that directly leads to a forbidden act—whether a means, a justification, or a catalyst—is also considered Haram.</li><li><strong style="color: var(--accent-gold);">7. Falsely Labeling Haram:</strong> Using legal loopholes or changing the name of a forbidden act to make it seem acceptable does not change its reality.</li><li><strong style="color: var(--accent-gold);">8. Intentions Do Not Justify Haram:</strong> A noble goal cannot be achieved through forbidden means. The end does not justify the means in Islamic law.</li></ul>`},
-      {title:"Section 1: General Principles", subtitle:"Principles 9 – 11", content:`<p style="font-size: 0.72rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight:700;">Section 1: General Principles</p><h3 style="font-family: var(--font-serif); font-size: 1.1rem; margin-bottom: 1rem; color: #FFF; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">Doubts & Extreme Necessities</h3><ul style="list-style-type: none; display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.85rem; line-height: 1.45;"><li><strong style="color: var(--accent-gold);">9. Safeguarding Against Doubts:</strong> If something falls into a gray area (Shubhat) where its status is unclear, it is best to avoid it to protect one's faith and honor.</li><li><strong style="color: var(--accent-gold);">10. Haram is Universal:</strong> What is forbidden for one group of people is forbidden for all. There are no double standards or privileged classes in divine law.</li><li><strong style="color: var(--accent-gold);">11. Necessity Overrules Prohibition:</strong> In extreme circumstances where survival is at stake (e.g., starvation), the law relaxes, and a person may consume or do what is normally forbidden strictly to survive.</li></ul>`},
-      {title:"Section 2: Personal Life", subtitle:"Dietary Regulations", content:`<p style="font-size: 0.72rem; color: var(--accent-sage); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight:700;">Section 2: Personal Life</p><h3 style="font-family: var(--font-serif); font-size: 1.1rem; margin-bottom: 1rem; color: #FFF; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">Dietary Laws</h3><ul style="list-style-type: none; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.82rem; line-height: 1.45;"><li><strong style="color: var(--accent-sage);">✦ Permissible Foods:</strong> All wholesome, clean, and nutritious foods (vegetables, fruits, grains, and permissible meats) are Halal.</li><li><strong style="color: var(--accent-sage);">≈ Prohibited Foods:</strong> Meat from animals that died of natural causes, spilled blood, pork, and animals sacrificed to anyone other than God.</li><li><strong style="color: var(--accent-sage);">✦ Halal Slaughter:</strong> Animals must be slaughtered humanely by invoking the name of God and swiftly cutting the jugular veins to ensure quick death and complete drainage of blood.</li><li><strong style="color: var(--accent-sage);">≈ Intoxicants:</strong> Alcohol and all mind-altering substances are strictly Haram, even in small quantities. Buying, selling, or producing them is equally forbidden.</li></ul>`},
-      {title:"Section 2: Personal Life", subtitle:"Clothing & Adornment", content:`<p style="font-size: 0.72rem; color: var(--accent-sage); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight:700;">Section 2: Personal Life</p><h3 style="font-family: var(--font-serif); font-size: 1.1rem; margin-bottom: 1rem; color: #FFF; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">Clothing and Home</h3><ul style="list-style-type: none; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.82rem; line-height: 1.45;"><li><strong style="color: var(--accent-sage);">✦ Modesty:</strong> Clothing must cover the private parts (Awrah) and should not be transparent, excessively tight, or designed to flaunt arrogance.</li><li><strong style="color: var(--accent-sage);">≈ Gold and Silk:</strong> Pure silk clothing and gold jewelry are forbidden for Muslim men but permitted for women.</li><li><strong style="color: var(--accent-sage);">≈ Extreme Alterations:</strong> Permanent modifications to the body driven by vanity (such as tattoos or changing creation for purely cosmetic enhancement) are forbidden, while general hygiene and grooming are highly encouraged.</li></ul>`},
-      {title:"Section 3: Marriage & Family", subtitle:"The Marriage Covenant", content:`<p style="font-size: 0.72rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight:700;">Section 3: Family Life</p><h3 style="font-family: var(--font-serif); font-size: 1.1rem; margin-bottom: 1rem; color: #FFF; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">The Marriage Contract</h3><ul style="list-style-type: none; display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.85rem; line-height: 1.45;"><li><strong style="color: var(--accent-gold);">✦ The Foundation:</strong> Marriage is a sacred covenant aimed at building a peaceful home based on mutual love, respect, and tranquility.</li><li><strong style="color: var(--accent-gold);">≈ Prohibited Marriages:</strong> Incestuous relationships and marriages with polytheists are forbidden.</li><li><strong style="color: var(--accent-gold);">✦ The Dowry (Mahr):</strong> A mandatory gift from the groom to the bride, establishing her financial independence and rights within the marriage.</li></ul>`},
-      {title:"Section 3: Marriage & Family", subtitle:"Spousal Relations", content:`<p style="font-size: 0.72rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight:700;">Section 3: Family Life</p><h3 style="font-family: var(--font-serif); font-size: 1.1rem; margin-bottom: 1rem; color: #FFF; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">Spousal Relations and Rights</h3><ul style="list-style-type: none; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.82rem; line-height: 1.45;"><li><strong style="color: var(--accent-gold);">✦ Mutual Kindness:</strong> Husbands and wives must treat each other with fairness, kindness, and equity.</li><li><strong style="color: var(--accent-gold);">≈ Fidelity:</strong> Adultery and fornication (Zina) are major sins. Islam blocks paths to Zina by encouraging modesty and regulating free mixing between unrelated genders.</li><li><strong style="color: var(--accent-gold);">✦ Divorce (Talaq):</strong> Allowed only as a last resort when reconciliation is completely impossible. It must be executed with fairness, respect, and zero harm.</li></ul>`},
-      {title:"Section 4: Daily Life", subtitle:"Commerce & Business", content:`<p style="font-size: 0.72rem; color: var(--accent-silver); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight:700;">Section 4: Daily Life & Commerce</p><h3 style="font-family: var(--font-serif); font-size: 1.1rem; margin-bottom: 1rem; color: #FFF; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">Commercial Transactions</h3><ul style="list-style-type: none; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.82rem; line-height: 1.45;"><li><strong style="color: var(--accent-silver);">✦ Honest Trade:</strong> Earning a living through lawful trade, employment, and business contracts is highly virtuous.</li><li><strong style="color: var(--accent-silver);">≈ Usury & Interest (Riba):</strong> Strictly prohibited due to its exploitative nature, which enriches the wealthy at the expense of the vulnerable.</li><li><strong style="color: var(--accent-silver);">≈ Deception & Gambling:</strong> Any transaction involving fraud, hoarding goods to artificially raise prices, bribery, or gambling (Maysir) is Haram.</li></ul>`},
-      {title:"Section 4: Daily Life", subtitle:"Social Etiquette", content:`<p style="font-size: 0.72rem; color: var(--accent-silver); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight:700;">Section 4: Daily Life & Commerce</p><h3 style="font-family: var(--font-serif); font-size: 1.1rem; margin-bottom: 1rem; color: #FFF; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">Social Etiquette & Recreation</h3><ul style="list-style-type: none; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.82rem; line-height: 1.45;"><li><strong style="color: var(--accent-silver);">✦ Respecting Privacy:</strong> Entering homes without permission or spying on others is forbidden.</li><li><strong style="color: var(--accent-silver);">≈ Brotherhood:</strong> Backbiting, slander, spreading rumors, and mocking others are strictly prohibited.</li><li><strong style="color: var(--accent-silver);">✦ Recreation:</strong> Entertainment, sports, and music are permissible as long as they do not promote vulgarity, neglect religious obligations, or involve forbidden elements.</li></ul>`}
-    ];
-
-    const omerLetters = [
-      {id:1, title:"Counting Down", text:"Danna. I hope Russia is treating you well and you are having a great time. I was just looking at the calendar. June 26th is getting closer every single day. I really can't wait for this waiting period to be over so we can finally take the next step together. I love you.", date:"June 26 Target"},
-      {id:2, title:"Thinking About Us", text:"Hope you are having a beautiful day on your trip today. It is pretty quiet over here without you. I just wanted to drop a little note to remind you how excited I am to marry you. Enjoy your vacation and know that I am right here waiting for you.", date:"Thinking of You"},
-      {id:3, title:"My Future Wife", text:"Just leaving a quick message to make you smile. The iddah feels long sometimes but you are so incredibly worth the wait. Have an amazing time in Russia and remember that you are my absolute favorite person in the whole world.", date:"Future Wife"},
-      {id:4, title:"Missing You", text:"I hope you are getting some good rest and exploring a lot today. I miss you a ton. Every day that passes brings us closer to being together properly and starting our life. Take care of yourself out there. I love you so much.", date:"Missing You"},
-      {id:5, title:"Almost There", text:"Just a quick reminder that the 26th is right around the corner. Go have fun in Russia and enjoy the rest of your vacation to the fullest. We have a whole lifetime together waiting for us very soon. Miss you endlessly.", date:"Countdown"}
-    ];
-
-    const microChallenges = ["Relax your shoulders, slightly part your teeth, and let your jaw completely unclench. Notice the weight of your body on your seat.","Trace the cold temperature of a glass of water all the way down to your stomach during your next sip.","Silently count backwards from 10 to 1 whenever you feel the urge to react to an annoying or controlling remark.","Look at a shadow cast in your room right now. Map its exact outline, gradients, and boundaries with cold focus.","Give someone an incredibly polite, serene smile that completely masks your real, secret strategic goals.","Sit in absolute stillness for exactly 60 seconds. Do nothing but trace the physical sound of your own quiet inhales."];
-    const groundingSteps = [{num:5,inst:"Look around you and locate 5 visible objects. Pay close attention to their shadows, edges, texture, or colors.",stepText:"Step 1 of 5: Vision"},{num:4,inst:"Acknowledge 4 things you can physically feel. The weight of your phone, your feet on the rug, your hair, or the air on your neck.",stepText:"Step 2 of 5: Touch"},{num:3,inst:"Listen closely and identify 3 distinct sounds. It could be faraway traffic, a bird, the sound of your own breathing, or the wind.",stepText:"Step 3 of 5: Hearing"},{num:2,inst:"Notice 2 smells around you. Your clothes, your soap, a book page, or simply the scent of the room you are in.",stepText:"Step 4 of 5: Olfactory"},{num:1,inst:"Acknowledge 1 thing you can taste, or simply notice the neutral taste in your mouth. Sip some cold water if you can.",stepText:"Step 5 of 5: Taste"}];
-
-    // PODCAST DATA — update manually when new episodes come out
-    const podcastShows = [
-      {
-        id: "pod_latest",
-        title: "Huberman Lab",
-        author: "Dr. Andrew Huberman",
-        image: "https://megaphone.imgix.net/podcasts/2d042ec8-5fd0-11f1-a583-d34f98bf1200/image/c939ff80ce31857dd7c3855498b342f4.jpg?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress",
-        episodes: [
-          {
-            title: "Eating for Better Sleep & Foods that Improve Metabolic Health | Dr. Marie-Pierre St-Onge",
-            duration: "1:57:00",
-            url: "https://traffic.megaphone.fm/SCIM5220943767.mp3"
-          },
-          {
-            title: "Essentials: Psychedelics & Neurostimulation for Brain Rewiring | Dr. Nolan Williams",
-            duration: "0:40:00",
-            url: "https://traffic.megaphone.fm/SCIM3664218578.mp3?updated=1747836376"
-          },
-          {
-            title: "Peptides: The Science, Uses & Safety | Dr. Abud Bakri",
-            duration: "2:00:00",
-            url: "https://traffic.megaphone.fm/SCIM8380331046.mp3"
-          }
-        ]
-      }
-    ];
-
-    /* ==========================================================================
-       PODCAST RENDER & PLAYER LOGIC
-       ========================================================================== */
-    function renderPodcasts() {
-      const container = document.getElementById('podcast-container');
-      container.innerHTML = '';
-      podcastShows.forEach(show => {
-        const showDiv = document.createElement('div');
-        showDiv.className = 'podcast-show-item';
-        const epHtml = show.episodes.map(ep => {
-          const safeTitle = ep.title.replace(/'/g, "\\'");
-          const safeShow  = show.title.replace(/'/g, "\\'");
-          const safeImg   = (show.image || '').replace(/'/g, "\\'");
-          return `
-            <div class="episode-item">
-              <div style="flex:1; min-width:0; padding-right:0.5rem;">
-                <div class="ep-title">${ep.title}</div>
-                <div class="ep-meta">${ep.duration}</div>
-              </div>
-              <div class="ep-actions">
-                <button class="ep-btn" onclick="playAudioTrack('${ep.url}','${safeTitle}','${safeShow}','${safeImg}')" title="Play">▶</button>
-                <button class="ep-btn" onclick="downloadPodcast('${ep.url}','${safeTitle}')" title="Share / Save">↓</button>
-              </div>
-            </div>`;
-        }).join('');
-        showDiv.innerHTML = `
-          <div class="podcast-show-header" onclick="this.parentElement.classList.toggle('open'); triggerHaptic('tick');">
-            <div class="podcast-thumb">
-              ${show.image ? `<img src="${show.image}" alt="" onerror="this.parentElement.innerHTML='🎙️'">` : '🎙️'}
-            </div>
-            <div class="podcast-info">
-              <div class="podcast-title">${show.title}</div>
-              <div class="podcast-author">${show.author}</div>
-            </div>
-            <span style="color:var(--text-muted); font-size:0.75rem; flex-shrink:0; margin-left:0.5rem;">▾</span>
-          </div>
-          <div class="podcast-episodes">${epHtml}</div>`;
-        container.appendChild(showDiv);
-      });
-    }
-
-    let savedIds = JSON.parse(localStorage.getItem('texttube_saved_ids')) || [];
-    let currentTab = 'stream'; let activeFilter = 'all'; let observer; let activeIndex = 0;
-    let activeStreamCards = []; let pacerIntervalId = null;
-    let audioCtx = null; let noiseNode = null; let filterNode = null; let isShieldPlaying = false;
-    let activeVibe = null; let groundingIndex = 0;
-    let isAmbientActive = false; let canvas, ctx; let animationFrameId = null; let stars = []; let ambientPacerVal = 0; let ambientPacerDirection = 1;
-    let currentBookPageIndex = 0; let touchStartX = 0; let touchEndX = 0;
-
-    function triggerHaptic(type) { if (!('vibrate' in navigator)) return; if (type === 'tick') navigator.vibrate(8); if (type === 'heavy') navigator.vibrate([15, 30, 15]); if (type === 'wave') navigator.vibrate(35); }
-    function saveToStorage() { localStorage.setItem('texttube_saved_ids', JSON.stringify(savedIds)); }
-    function shuffleArray(array) { const arr = [...array]; for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
-    
-    let toastTimeout;
-    function showToast(text) { const toast = document.getElementById('toast'); const toastText = document.getElementById('toast-text'); toastText.innerText = text; toast.classList.add('show'); clearTimeout(toastTimeout); toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 1800); }
-    function getCategoryStyleClass(cat) { if (cat === "Inner Sanctuary") return "card-sanctuary"; if (cat === "Neuro-Sync") return "card-neuro"; if (cat === "Dry Satire") return "card-satire"; return ""; }
-    function getStarOutlineSVG() { return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`; }
-    function getStarFilledSVG() { return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`; }
-
-    function createEmptyState() {
-      const empty = document.createElement('div'); empty.className = 'empty-state';
-      empty.innerHTML = `<svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><h3 class="empty-title">Stream is empty</h3><p class="empty-desc">Check your filters to discover more quotes.</p><button class="empty-cta" onclick="resetToStreamFeed()">Explore Stream</button>`;
-      return empty;
-    }
-
-    function renderFeed(appendMore = false) {
-      const container = document.getElementById('feed-container');
-      if (!appendMore) { killPacerEngine(); container.innerHTML = ''; activeStreamCards = []; }
-      let pool = baseCards.filter(item => {
-        if (activeVibe) {
-          if (activeVibe === 'overwhelmed') return item.category === 'Inner Sanctuary' || item.category === 'Neuro-Sync';
-          if (activeVibe === 'restless') return item.category === 'Neuro-Sync' || item.isPacer;
-          if (activeVibe === 'weary') return item.category === 'Inner Sanctuary';
-          if (activeVibe === 'frustrated') return item.category === 'Dry Satire';
-        }
-        if (activeFilter === 'all') return true;
-        if (activeFilter === 'sanctuary') return item.category === 'Inner Sanctuary';
-        if (activeFilter === 'neuro') return item.category === 'Neuro-Sync' || item.isPacer;
-        if (activeFilter === 'satire') return item.category === 'Dry Satire';
-        return true;
-      });
-      let newItems = [];
-      if (pool.length > 0) {
-        const hasPacer = pool.find(item => item.isPacer);
-        let standardPool = pool.filter(item => !item.isPacer);
-        let shuffled = shuffleArray(standardPool);
-        if (hasPacer && !appendMore && activeFilter === 'all') shuffled.splice(1, 0, hasPacer);
-        newItems = shuffled;
-      }
-      if (!appendMore && newItems.length === 0) { container.appendChild(createEmptyState()); return; }
-      const startingIndex = activeStreamCards.length;
-      activeStreamCards = activeStreamCards.concat(newItems);
-      newItems.forEach((item, index) => {
-        const absoluteIndex = startingIndex + index;
-        const isSaved = savedIds.includes(item.id);
-        const cardElement = createCardElement(item, absoluteIndex, isSaved);
-        container.appendChild(cardElement);
-      });
-      setupIntersectionObserver();
-    }
-
-    function createCardElement(item, absoluteIndex, isSaved) {
-      const card = document.createElement('div'); card.className = `card ${getCategoryStyleClass(item.category)}`; card.dataset.id = item.id; card.dataset.index = absoluteIndex;
-      if (item.isPacer) {
-        card.className = "card card-neuro pacer-card-root";
-        card.innerHTML = `<div class="card-glow"></div><div class="card-header"><div class="track-meta"><span class="track-num">BIO-PACER RESET</span><span class="track-origin">${item.author}</span></div><div class="card-badge">≈ Huberman Pacer</div></div><div class="card-body"><p class="quote-text" style="font-size:0.95rem; line-height:1.5; color:var(--text-muted); margin-bottom:1rem; text-align:center;">${item.text}</p><div class="pacer-container"><div class="pacer-view-box" id="pacer-box-target"><div class="pacer-aura-element" id="pacer-aura"></div><div class="pacer-circle-element" id="pacer-circle"></div></div><div class="pacer-instruction-label" id="pacer-label">Tap target circle to begin</div></div></div><div class="card-footer"><div class="curator-credits"><span class="credits-icon">♥</span><span>Tactile Resync Engine</span></div><div class="meta-metrics"><div class="metric-item"><span>BIOLOGICAL HACK</span></div></div><div class="action-btn-container"><button class="star-btn ${isSaved ? 'saved' : ''}" onclick="toggleSaveCard(event, ${item.id})">${isSaved ? getStarFilledSVG() : getStarOutlineSVG()}</button></div></div>`;
-        setTimeout(() => { const target = card.querySelector('#pacer-box-target'); if (target) target.addEventListener('click', toggleBreathingEngine); }, 50);
-        return card;
-      }
-      const wordCount = item.text.split(' ').length; const readTime = Math.max(1, Math.round(wordCount / 180 * 10) / 10);
-      card.innerHTML = `<div class="card-glow"></div><div class="card-header"><div class="track-meta"><span class="track-num">TRACK #${String(item.id).padStart(2, '0')}</span><span class="track-origin">${item.author}</span></div><div class="card-badge"><span>${item.icon}</span><span>${item.category}</span></div></div><div class="card-body"><div class="quote-mark">“</div><p class="quote-text">${item.text}</p><p class="quote-author">${item.author}</p></div><div class="card-footer"><div class="curator-credits"><span class="credits-icon">♥</span><span>Curated for Danna</span></div><div class="meta-metrics"><div class="metric-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span>${readTime}m read</span></div><div class="metric-item"><span>OFFLINE</span></div></div><div class="action-btn-container"><button class="star-btn ${isSaved ? 'saved' : ''}" onclick="toggleSaveCard(event, ${item.id})">${isSaved ? getStarFilledSVG() : getStarOutlineSVG()}</button></div></div>`;
-      if (absoluteIndex === 0) { const swipe = document.createElement('div'); swipe.className = 'swipe-indicator'; swipe.innerText = 'Swipe Up ▽'; card.appendChild(swipe); }
-      return card;
-    }
-
-    function renderBook() {
-      const container = document.getElementById('book-page-slider'); container.innerHTML = '';
-      bookPages.forEach((page, index) => {
-        const pageDiv = document.createElement('div'); pageDiv.className = 'book-page';
-        if (index < currentBookPageIndex) pageDiv.classList.add('page-prev');
-        else if (index === currentBookPageIndex) pageDiv.classList.add('page-active');
-        else pageDiv.classList.add('page-next');
-        pageDiv.innerHTML = page.content; container.appendChild(pageDiv);
-      });
-      document.getElementById('book-progress-text').innerText = `Page ${currentBookPageIndex + 1} of ${bookPages.length}`;
-    }
-    
-    function turnPage(direction) {
-      if (direction === 'next') { if (currentBookPageIndex < bookPages.length - 1) { currentBookPageIndex++; triggerHaptic('tick'); } else { showToast("End of book reached"); return; } }
-      else if (direction === 'prev') { if (currentBookPageIndex > 0) { currentBookPageIndex--; triggerHaptic('tick'); } else { return; } }
-      renderBook();
-    }
-
-    function handleTouchStart(e) { touchStartX = e.changedTouches[0].screenX; }
-    function handleTouchEnd(e) { touchEndX = e.changedTouches[0].screenX; if (touchEndX < touchStartX - 50) turnPage('next'); if (touchEndX > touchStartX + 50) turnPage('prev'); }
-
-    function renderSavedQuotesList() {
-      const container = document.getElementById('saved-quotes-container'); container.innerHTML = '';
-      const savedItems = baseCards.filter(item => savedIds.includes(item.id));
-      if (savedItems.length === 0) { container.innerHTML = `<div style="text-align:center; padding:1.5rem; border:1px dashed rgba(255,255,255,0.05); border-radius:8px; color:var(--text-muted); font-size:0.75rem;">No starred items yet. Tap the star icon (★) at the bottom right of any card in your Quotes tab!</div>`; return; }
-      savedItems.forEach(item => {
-        const itemCard = document.createElement('div'); itemCard.className = 'saved-quote-card';
-        const cardStyle = getCategoryStyleClass(item.category); let borderAccent = 'var(--accent-gold)';
-        if (cardStyle === 'card-neuro') borderAccent = 'var(--accent-sage)'; if (cardStyle === 'card-satire') borderAccent = 'var(--accent-silver)';
-        itemCard.style.borderLeft = `3px solid ${borderAccent}`;
-        itemCard.innerHTML = `<p style="font-size: 0.82rem; line-height: 1.5; font-style: ${cardStyle === 'card-satire' ? 'italic' : 'normal'}; font-family: ${cardStyle === 'card-sanctuary' ? 'var(--font-serif)' : 'var(--font-sans)'}; color: var(--text-primary);">"${item.text}"</p><div style="display: flex; justify-content: space-between; align-items: center; margin-top:0.25rem;"><span style="font-size: 0.72rem; color: ${borderAccent}; font-weight: 700; letter-spacing:0.02em;">- ${item.author}</span><button class="star-btn saved" onclick="toggleSaveCard(event, ${item.id})" style="padding: 0.25rem;">${getStarFilledSVG()}</button></div>`;
-        container.appendChild(itemCard);
-      });
-    }
-
-    function toggleSaveCard(event, id) {
-      event.stopPropagation(); const index = savedIds.indexOf(id); let actionMsg = "";
-      if (index === -1) { savedIds.push(id); actionMsg = "Saved to Oasis favorites"; triggerHaptic('tick'); } 
-      else { savedIds.splice(index, 1); actionMsg = "Removed from favorites"; triggerHaptic('tick'); }
-      saveToStorage(); showToast(actionMsg);
-      document.querySelectorAll(`.card[data-id="${id}"] .star-btn`).forEach(btn => { if(savedIds.includes(id)) { btn.classList.add('saved'); btn.innerHTML = getStarFilledSVG(); } else { btn.classList.remove('saved'); btn.innerHTML = getStarOutlineSVG(); } });
-      if (currentTab === 'oasis') renderSavedQuotesList();
-    }
-
-    function switchTab(tab) {
-      if (currentTab === tab) return; currentTab = tab; triggerHaptic('tick');
-      document.getElementById('tab-stream').classList.toggle('active', tab === 'stream');
-      document.getElementById('tab-books').classList.toggle('active', tab === 'books');
-      document.getElementById('tab-oasis').classList.toggle('active', tab === 'oasis');
-      const topBar = document.getElementById('top-bar'); const feedContainer = document.getElementById('feed-container');
-      const oasisView = document.getElementById('oasis-view'); const booksView = document.getElementById('books-view');
-      if (tab === 'oasis') { topBar.style.display = 'none'; feedContainer.style.display = 'none'; booksView.style.display = 'none'; oasisView.style.display = 'flex'; setupDailyChallenge(); renderSavedQuotesList(); renderLetters(); renderPodcasts(); } 
-      else if (tab === 'books') { topBar.style.display = 'none'; feedContainer.style.display = 'none'; oasisView.style.display = 'none'; booksView.style.display = 'flex'; renderBook(); } 
-      else { topBar.style.display = 'flex'; document.getElementById('filter-container').style.display = 'flex'; feedContainer.style.display = 'block'; oasisView.style.display = 'none'; booksView.style.display = 'none'; renderFeed(); }
-    }
-
-    function setFilter(filter) {
-      if (activeFilter === filter) return; activeFilter = filter; triggerHaptic('tick');
-      if (activeVibe) { activeVibe = null; document.querySelectorAll('.vibe-btn').forEach(btn => btn.classList.remove('active')); }
-      document.querySelectorAll('.filter-pill').forEach(pill => { pill.classList.toggle('active', pill.getAttribute('data-filter') === filter); });
-      renderFeed();
-    }
-
-    function resetToStreamFeed() { activeFilter = 'all'; document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === 'all')); switchTab('stream'); }
-    function scrollToPacerCard() { if (currentTab !== 'stream') switchTab('stream'); setFilter('all'); setTimeout(() => { const pacerCard = document.querySelector('.pacer-card-root'); if (pacerCard) pacerCard.scrollIntoView({ behavior: 'smooth' }); }, 150); }
-
-    function toggleSoundShield() {
-      const shieldBtn = document.getElementById('sound-shield-btn'); const shieldBtnText = document.getElementById('sound-btn-text');
-      if (isShieldPlaying) {
-        if (audioCtx) { audioCtx.close().then(() => { audioCtx = null; noiseNode = null; filterNode = null; isShieldPlaying = false; shieldBtn.classList.remove('active-shield'); shieldBtnText.innerText = "Sound Shield"; showToast("Sound Shield deactivated"); triggerHaptic('tick'); }); }
-      } else {
-        try {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          const bufferSize = 2 * audioCtx.sampleRate; const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); const output = noiseBuffer.getChannelData(0);
-          let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-          for (let i = 0; i < bufferSize; i++) {
-            const white = Math.random() * 2 - 1;
-            b0 = 0.99886 * b0 + white * 0.0555179; b1 = 0.99332 * b1 + white * 0.0750759; b2 = 0.96900 * b2 + white * 0.1538520; b3 = 0.86650 * b3 + white * 0.3104856; b4 = 0.55000 * b4 + white * 0.5329522; b5 = -0.7616 * b5 - white * 0.0168980;
-            output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362; output[i] *= 0.08; b6 = white * 0.115926;
-          }
-          noiseNode = audioCtx.createBufferSource(); noiseNode.buffer = noiseBuffer; noiseNode.loop = true;
-          filterNode = audioCtx.createBiquadFilter(); filterNode.type = 'lowpass'; filterNode.frequency.value = 1100;
-          const highPass = audioCtx.createBiquadFilter(); highPass.type = 'highpass'; highPass.frequency.value = 250;
-          const lfo = audioCtx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.12; 
-          const lfoGain = audioCtx.createGain(); lfoGain.gain.value = 350; 
-          lfo.connect(lfoGain); lfoGain.connect(filterNode.frequency); lfo.start();
-          noiseNode.connect(highPass); highPass.connect(filterNode); filterNode.connect(audioCtx.destination);
-          noiseNode.start(0); isShieldPlaying = true;
-          shieldBtn.classList.add('active-shield'); shieldBtnText.innerText = "Shield Active"; showToast("Sound Shield activated (Heavy Rain)"); triggerHaptic('heavy');
-        } catch (e) { showToast("Audio context not supported on this browser"); }
-      }
-    }
-
-    function toggleBreathingEngine() {
-      const box = document.getElementById('pacer-box-target'); const label = document.getElementById('pacer-label'); const pacerBtn = document.getElementById('pacer-shortcut');
-      if (!box) return;
-      if (pacerIntervalId !== null) { killPacerEngine(); triggerHaptic('heavy'); label.innerText = "Paused. Tap to restart."; label.style.color = "var(--text-muted)"; if(pacerBtn) pacerBtn.classList.remove('active-pacer'); return; }
-      triggerHaptic('heavy'); label.style.color = "var(--accent-sage)"; if(pacerBtn) pacerBtn.classList.add('active-pacer');
-      runBreathingSequenceLoop();
-    }
-
-    function runBreathingSequenceLoop() {
-      const box = document.getElementById('pacer-box-target'); const label = document.getElementById('pacer-label');
-      if (!box || !label) return;
-      function executeCycleSequence() {
-        box.className = "pacer-view-box inhale-primary"; label.innerText = "Inhale deeply (Nose)..."; label.style.color = "var(--accent-sage)"; triggerHaptic('tick');
-        setTimeout(() => { if (pacerIntervalId === null) return; box.className = "pacer-view-box inhale-secondary"; label.innerText = "Sharp inhale again!"; label.style.color = "#AED581"; triggerHaptic('heavy'); }, 3000);
-        setTimeout(() => { if (pacerIntervalId === null) return; box.className = "pacer-view-box exhale-release"; label.innerText = "Exhale slowly... Let it go"; label.style.color = "#818CF8"; triggerHaptic('wave'); }, 3700);
-      }
-      executeCycleSequence(); pacerIntervalId = setInterval(executeCycleSequence, 8700);
-    }
-    function killPacerEngine() { if (pacerIntervalId !== null) { clearInterval(pacerIntervalId); pacerIntervalId = null; } const box = document.getElementById('pacer-box-target'); if (box) box.className = "pacer-view-box"; const pacerBtn = document.getElementById('pacer-shortcut'); if (pacerBtn) pacerBtn.classList.remove('active-pacer'); }
-
-    function toggleDrawer(id) { document.querySelectorAll('.oasis-drawer').forEach(drawer => { if (drawer.id === id) { drawer.classList.toggle('expanded'); triggerHaptic('tick'); } else { drawer.classList.remove('expanded'); } }); }
-    function setVibeSync(vibe) { const buttons = document.querySelectorAll('.vibe-btn'); if (activeVibe === vibe) { activeVibe = null; buttons.forEach(btn => btn.classList.remove('active')); showToast("Vibe sync cleared"); } else { activeVibe = vibe; buttons.forEach(btn => { if (btn.getAttribute('data-vibe') === vibe) btn.classList.add('active'); else btn.classList.remove('active'); }); showToast(`Feed customized to: ${vibe}`); } triggerHaptic('heavy'); renderFeed(); }
-    
-    function nextGroundingStep() {
-      const numElem = document.getElementById('grounding-num'); const txtElem = document.getElementById('grounding-txt'); const stepElem = document.getElementById('grounding-step'); const actionBtn = document.getElementById('grounding-action-btn');
-      groundingIndex++;
-      if (groundingIndex >= groundingSteps.length) {
-        groundingIndex = 0; triggerHaptic('wave'); showToast("Sensory reset complete");
-        numElem.innerText = groundingSteps[0].num; txtElem.innerText = groundingSteps[0].inst; stepElem.innerText = groundingSteps[0].stepText; actionBtn.innerText = "Acknowledge & Continue";
-      } else {
-        triggerHaptic('tick'); const currentData = groundingSteps[groundingIndex];
-        numElem.innerText = currentData.num; txtElem.innerText = currentData.inst; stepElem.innerText = currentData.stepText;
-        if (groundingIndex === groundingSteps.length - 1) actionBtn.innerText = "Complete Reset Sequence"; else actionBtn.innerText = "Acknowledge & Continue";
-      }
-    }
-
-    function setupDailyChallenge() {
-      const savedDate = localStorage.getItem('havenscroll_challenge_date'); const today = new Date().toDateString(); let index = parseInt(localStorage.getItem('havenscroll_challenge_index'), 10);
-      if (savedDate !== today || isNaN(index)) { index = Math.floor(Math.random() * microChallenges.length); localStorage.setItem('havenscroll_challenge_index', index); localStorage.setItem('havenscroll_challenge_date', today); localStorage.removeItem('havenscroll_challenge_completed'); }
-      document.getElementById('challenge-display').innerText = microChallenges[index];
-      const isCompleted = localStorage.getItem('havenscroll_challenge_completed') === 'true'; const btn = document.getElementById('challenge-btn');
-      if (isCompleted) { btn.classList.add('completed'); btn.innerText = "Completed ✓"; } else { btn.classList.remove('completed'); btn.innerText = "Complete Task"; }
-    }
-
-    function completeDailyChallenge() {
-      const isCompleted = localStorage.getItem('havenscroll_challenge_completed') === 'true'; const btn = document.getElementById('challenge-btn');
-      if (!isCompleted) { localStorage.setItem('havenscroll_challenge_completed', 'true'); btn.classList.add('completed'); btn.innerText = "Completed ✓"; showToast("Micro-challenge completed! Proud of you."); triggerHaptic('heavy'); } 
-      else { localStorage.removeItem('havenscroll_challenge_completed'); btn.classList.remove('completed'); btn.innerText = "Complete Task"; showToast("Progress reset"); triggerHaptic('tick'); }
-    }
-
-    function renderLetters() {
-      const container = document.getElementById('letters-container'); container.innerHTML = '';
-      omerLetters.forEach(letter => { const item = document.createElement('div'); item.className = 'letter-item'; item.onclick = () => openLetter(letter.id); item.innerHTML = `<span class="letter-title">✉️ ${letter.title}</span><span class="letter-meta">${letter.date}</span>`; container.appendChild(item); });
-    }
-
-    function openLetter(id) { const letter = omerLetters.find(l => l.id === id); if (!letter) return; document.getElementById('letter-text-box').innerText = letter.text; document.getElementById('letter-modal').style.display = 'flex'; triggerHaptic('heavy'); }
-    function closeLetter() { document.getElementById('letter-modal').style.display = 'none'; triggerHaptic('tick'); }
-
-    /* ==========================================================================
-       PODCAST PLAYER — full controls
-       ========================================================================== */
-    const nativeAudio = document.getElementById('native-audio');
-    const globalPlayer = document.getElementById('global-audio-player');
-    const playBtn = document.getElementById('player-play-btn');
-    const scrubber = document.getElementById('player-scrubber');
-    const currentTimeEl = document.getElementById('player-current');
-    const durationEl = document.getElementById('player-duration');
-    const speedBtn = document.getElementById('player-speed-btn');
-
-    const SPEED_STEPS = [1, 1.25, 1.5, 1.75, 2];
-    let currentSpeedIndex = 0;
-    let isScrubbing = false;
-
-    function formatTime(secs) {
-      if (isNaN(secs) || secs < 0) return '0:00';
-      const h = Math.floor(secs / 3600);
-      const m = Math.floor((secs % 3600) / 60);
-      const s = Math.floor(secs % 60);
-      if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-      return `${m}:${String(s).padStart(2,'0')}`;
-    }
-
-    function updateScrubberBackground(pct) {
-      scrubber.style.background = `linear-gradient(to right, var(--accent-gold) ${pct}%, rgba(255,255,255,0.1) ${pct}%)`;
-    }
-
-    nativeAudio.addEventListener('timeupdate', () => {
-      if (isScrubbing) return;
-      const pct = nativeAudio.duration ? (nativeAudio.currentTime / nativeAudio.duration) * 100 : 0;
-      scrubber.value = pct;
-      updateScrubberBackground(pct);
-      currentTimeEl.textContent = formatTime(nativeAudio.currentTime);
-    });
-
-    nativeAudio.addEventListener('loadedmetadata', () => {
-      durationEl.textContent = formatTime(nativeAudio.duration);
-    });
-
-    nativeAudio.addEventListener('ended', () => {
-      playBtn.innerHTML = '▶';
-      scrubber.value = 0;
-      updateScrubberBackground(0);
-      currentTimeEl.textContent = '0:00';
-    });
-
-    nativeAudio.addEventListener('play', () => {
-      playBtn.innerHTML = '<span style="letter-spacing:-1px">❚❚</span>';
-    });
-
-    nativeAudio.addEventListener('pause', () => {
-      playBtn.innerHTML = '▶';
-    });
-
-    // While dragging — update visuals but don't seek yet (smoother on iOS)
-    function onScrubberInput(value) {
-      isScrubbing = true;
-      const pct = parseFloat(value);
-      updateScrubberBackground(pct);
-      if (nativeAudio.duration) {
-        currentTimeEl.textContent = formatTime((pct / 100) * nativeAudio.duration);
-      }
-    }
-
-    // On release — actually seek
-    function onScrubberChange(value) {
-      isScrubbing = false;
-      if (nativeAudio.duration) {
-        nativeAudio.currentTime = (parseFloat(value) / 100) * nativeAudio.duration;
-      }
-      triggerHaptic('tick');
-    }
-
-    function skipPodcast(seconds) {
-      nativeAudio.currentTime = Math.max(0, Math.min(nativeAudio.duration || 0, nativeAudio.currentTime + seconds));
-      triggerHaptic('tick');
-    }
-
-    function cyclePlaybackSpeed() {
-      currentSpeedIndex = (currentSpeedIndex + 1) % SPEED_STEPS.length;
-      const speed = SPEED_STEPS[currentSpeedIndex];
-      nativeAudio.playbackRate = speed;
-      speedBtn.textContent = speed === 1 ? '1×' : `${speed}×`;
-      speedBtn.style.color = speed === 1 ? '' : 'var(--accent-gold)';
-      speedBtn.style.borderColor = speed === 1 ? '' : 'var(--accent-gold)';
-      showToast(`Speed: ${speed}×`);
-      triggerHaptic('tick');
-    }
-
-    function playAudioTrack(url, title, author, image) {
-      document.getElementById('player-title').innerText = title;
-      document.getElementById('player-author').innerText = author;
-      // Update player thumb
-      const thumb = document.querySelector('#global-audio-player .player-thumb');
-      if (thumb) {
-        thumb.innerHTML = image
-          ? `<img src="${image}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;" onerror="this.parentElement.innerHTML='🎙️'">`
-          : '🎙️';
-      }
-      // Reset state
-      scrubber.value = 0;
-      updateScrubberBackground(0);
-      currentTimeEl.textContent = '0:00';
-      durationEl.textContent = '0:00';
-      currentSpeedIndex = 0;
-      nativeAudio.playbackRate = 1;
-      speedBtn.textContent = '1×';
-      speedBtn.style.color = '';
-      speedBtn.style.borderColor = '';
-      // Play
-      nativeAudio.src = url;
-      nativeAudio.play();
-      globalPlayer.style.display = 'flex';
-      triggerHaptic('heavy');
-    }
-
-    function togglePodcastPlay() {
-      if (nativeAudio.paused) {
-        nativeAudio.play();
-      } else {
-        nativeAudio.pause();
-      }
-      triggerHaptic('tick');
-    }
-
-    function closePodcastPlayer() {
-      nativeAudio.pause();
-      nativeAudio.src = '';
-      globalPlayer.style.display = 'none';
-      scrubber.value = 0;
-      updateScrubberBackground(0);
-      triggerHaptic('tick');
-    }
-
-    async function downloadPodcast(url, title) {
-      triggerHaptic('wave');
-      // On iOS Safari, direct downloads of cross-origin audio are not possible via <a download>.
-      // Best approach: use Web Share API (works perfectly on iPhone) or open in new tab as fallback.
-      const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
-      
-      if (isIOS) {
-        // On iPhone: try Web Share first (user can AirDrop, save to Files, etc.)
-        if (navigator.share) {
-          try {
-            await navigator.share({ title: title || 'Podcast Episode', url: url });
-            showToast("Share sheet opened ✓");
-          } catch (e) {
-            // User dismissed share sheet — no problem
-            if (e.name !== 'AbortError') {
-              // Fallback: open audio directly in Safari so user can use long-press > Download
-              window.open(url, '_blank');
-              showToast("Tap & hold the audio to save");
-            }
-          }
-        } else {
-          // Older iOS: open directly so Safari handles it
-          window.open(url, '_blank');
-          showToast("Hold the audio to save to Files");
-        }
-        return;
-      }
-
-      // On Android / Desktop: use blob download
-      showToast("Downloading... this may take a moment");
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = (title || 'episode').replace(/[^a-z0-9 ]/gi, '_') + '.mp3';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-        showToast("Download saved ✓");
-      } catch (e) {
-        // Fallback if CORS blocks blob fetch
-        window.open(url, '_blank');
-        showToast("Opened — save manually if needed");
-      }
-      triggerHaptic('heavy');
-    }
-
-
-    /* ==========================================================================
-       SERVICE WORKER + VERSION-BASED UPDATE DETECTION
-       ========================================================================== */
-    let pendingUpdateWorker = null;
-
-    function showUpdateBanner() {
-      const banner = document.getElementById('update-banner');
-      if (banner) banner.style.display = 'flex';
-    }
-
-    function dismissUpdateBanner() {
-      const banner = document.getElementById('update-banner');
-      if (banner) banner.style.display = 'none';
-    }
-
-    function applyUpdate() {
-      dismissUpdateBanner();
-      showToast("Updating Haven Scroll...");
-      if (pendingUpdateWorker) {
-        pendingUpdateWorker.postMessage({ type: 'SKIP_WAITING' });
-        pendingUpdateWorker = null;
-      }
-      setTimeout(() => window.location.reload(true), 800);
-    }
-
-    // Version polling: fetches version.json from server, compares to stored version.
-    // This works reliably on iOS Safari where SW updatefound events can be delayed.
-    const CURRENT_VERSION_KEY = 'havenscroll_installed_version';
-
-    async function checkForVersionUpdate() {
-      try {
-        const res = await fetch('./version.json?t=' + Date.now(), { cache: 'no-store' });
-        if (!res.ok) return;
-        const data = await res.json();
-        const serverVersion = data.version;
-        const installedVersion = localStorage.getItem(CURRENT_VERSION_KEY);
-
-        if (!installedVersion) {
-          // First time — just store it, no banner
-          localStorage.setItem(CURRENT_VERSION_KEY, serverVersion);
-          return;
-        }
-
-        if (serverVersion !== installedVersion) {
-          // New version on server — show banner
-          showUpdateBanner();
-        }
-      } catch (e) {
-        // version.json not found or network error — silently ignore
-      }
-    }
-
-    function registerAndWatchSW() {
-      if (!('serviceWorker' in navigator)) return;
-      navigator.serviceWorker.register('./sw.js').then(reg => {
-        // Also listen for SW-based updates (belt and suspenders)
-        if (reg.waiting) {
-          pendingUpdateWorker = reg.waiting;
-          showUpdateBanner();
-        }
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              pendingUpdateWorker = newWorker;
-              showUpdateBanner();
-            }
-          });
-        });
-      }).catch(err => console.log('SW registration failed:', err));
-    }
-
-    // When "Update Now" is tapped, also update the stored version
-    const _originalApplyUpdate = applyUpdate;
-    function applyUpdate() {
-      // Clear stored version so it re-reads fresh after reload
-      localStorage.removeItem(CURRENT_VERSION_KEY);
-      dismissUpdateBanner();
-      showToast("Updating Haven Scroll...");
-      if (pendingUpdateWorker) {
-        pendingUpdateWorker.postMessage({ type: 'SKIP_WAITING' });
-        pendingUpdateWorker = null;
-      }
-      setTimeout(() => window.location.reload(true), 800);
-    }
-    function toggleAmbientStarfield(activate) {
-      const overlay = document.getElementById('ambient-starfield-overlay'); isAmbientActive = activate;
-      if (activate) { overlay.style.display = 'flex'; initStarfield(); if (!isShieldPlaying) toggleSoundShield(); triggerHaptic('heavy'); } 
-      else { overlay.style.display = 'none'; if (animationFrameId) cancelAnimationFrame(animationFrameId); stars = []; triggerHaptic('tick'); }
-    }
-
-    function initStarfield() {
-      canvas = document.getElementById('starfield-canvas'); ctx = canvas.getContext('2d'); resizeCanvas(); window.addEventListener('resize', resizeCanvas);
-      stars = []; const starCount = 120;
-      for (let i = 0; i < starCount; i++) { stars.push({ x: Math.random() * canvas.width - canvas.width / 2, y: Math.random() * canvas.height - canvas.height / 2, z: Math.random() * canvas.width, color: Math.random() > 0.3 ? '#81C784' : '#FFB74D' }); }
-      runStarfieldLoop();
-    }
-
-    function resizeCanvas() { if (!canvas) return; const rect = canvas.parentElement.getBoundingClientRect(); canvas.width = rect.width; canvas.height = rect.height; }
-
-    function runStarfieldLoop() {
-      if (!isAmbientActive) return;
-      ctx.fillStyle = 'rgba(2, 4, 8, 0.25)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ambientPacerVal += 0.007 * ambientPacerDirection;
-      if (ambientPacerVal >= 1) { ambientPacerVal = 1; ambientPacerDirection = -1; } else if (ambientPacerVal <= 0.02) { ambientPacerVal = 0.02; ambientPacerDirection = 1; }
-      const label = document.getElementById('ambient-pacer-label');
-      if (ambientPacerDirection === 1) { label.innerText = "Breathe in deeply..."; label.style.color = "var(--accent-sage)"; } else { label.innerText = "Exhale slowly... Let go"; label.style.color = "var(--accent-indigo)"; }
-      const centerX = canvas.width / 2; const centerY = canvas.height / 2;
-      stars.forEach(star => {
-        star.z -= 1.5 + (ambientPacerVal * 6);
-        if (star.z <= 0) { star.z = canvas.width; star.x = Math.random() * canvas.width - canvas.width / 2; star.y = Math.random() * canvas.height - canvas.height / 2; }
-        const k = 128.0 / star.z; const px = star.x * k + centerX; const py = star.y * k + centerY;
-        if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) { const size = (1 - star.z / canvas.width) * (2 + ambientPacerVal * 4); ctx.beginPath(); ctx.arc(px, py, size, 0, Math.PI * 2); ctx.fillStyle = star.color; ctx.fill(); }
-      });
-      animationFrameId = requestAnimationFrame(runStarfieldLoop);
-    }
-
-    function activateStealthMode() { document.getElementById('stealth-overlay').style.display = 'flex'; killPacerEngine(); triggerHaptic('heavy'); }
-    function handleStealthScreenTap(event) { const triggerElement = document.getElementById('stealth-exit-trigger'); if (event.target === triggerElement || triggerElement.contains(event.target)) { document.getElementById('stealth-overlay').style.display = 'none'; triggerHaptic('heavy'); showToast("Sanctuary restored"); } }
-
-    function setupIntersectionObserver() {
-      if (observer) observer.disconnect();
-      const options = { root: document.getElementById('feed-container'), threshold: 0.5 };
-      observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const index = parseInt(entry.target.dataset.index, 10); activeIndex = index;
-            if (currentTab === 'stream' && index >= activeStreamCards.length - 3) renderFeed(true);
-          } else {
-            if (entry.target.classList.contains('pacer-card-root')) { killPacerEngine(); const label = document.getElementById('pacer-label'); if (label) { label.innerText = "Tap target circle to begin"; label.style.color = "var(--text-muted)"; } }
-          }
-        });
-      }, options);
-      document.querySelectorAll('.card').forEach(card => observer.observe(card));
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      renderFeed();
-      const touchSurface = document.getElementById('book-touch-surface');
-      if (touchSurface) { touchSurface.addEventListener('touchstart', handleTouchStart, { passive: true }); touchSurface.addEventListener('touchend', handleTouchEnd, { passive: true }); }
-      setTimeout(() => { document.getElementById('splash-screen').classList.add('hidden'); }, 2300);
-      registerAndWatchSW();
-      // Check for updates 3 seconds after load (after splash), then every 5 minutes
-      setTimeout(checkForVersionUpdate, 3000);
-      setInterval(checkForVersionUpdate, 5 * 60 * 1000);
-    });
-  </script>
+  <script src="./app.js"></script>
 </body>
 </html>
