@@ -1,4 +1,4 @@
-const CACHE_NAME = 'havenscroll-cache-v2.2.0';
+const CACHE_NAME = 'havenscroll-cache-v2.2.2';
 
 // Everything the sanctuary needs to run with zero network
 const ASSETS_TO_CACHE = [
