@@ -1,4 +1,4 @@
-const CACHE_NAME = 'havenscroll-cache-v2.1.0';
+const CACHE_NAME = 'havenscroll-cache-v2.1.2';
 
 // Everything the sanctuary needs to run with zero network
 const ASSETS_TO_CACHE = [
@@ -8,12 +8,12 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './data.json',
   './manifest.webmanifest',
-  './assets/fonts/Inter-Variable.ttf',
-  './assets/fonts/Inter-Italic-Variable.ttf',
-  './assets/audio/splash-sound.mp3',
-  './assets/video/sanctuary-bg.mp4',
-  './assets/video/neuro-bg.mp4',
-  './assets/video/satire-bg.mp4',
+  './fonts/Inter-Variable.ttf',
+  './fonts/Inter-Italic-Variable.ttf',
+  './audio/splash-sound.mp3',
+  './video/sanctuary-bg.mp4',
+  './video/neuro-bg.mp4',
+  './video/satire-bg.mp4',
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png'
