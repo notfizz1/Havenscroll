@@ -1187,7 +1187,7 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
 
   /* -- 2. Surface: real photo if loaded, else canvas gradient -- */
   if (_moonPhoto) {
-    ctx.drawImage(_moonPhoto, cx-r, cy-r, r*2, r*2);
+    const ps=r*1.15; ctx.drawImage(_moonPhoto, cx-ps, cy-ps, ps*2, ps*2);
   } else {
     const grad = ctx.createRadialGradient(cx-r*0.18, cy-r*0.2, r*0.04, cx, cy, r);
     grad.addColorStop(0,    '#F5EDCC');
@@ -1220,8 +1220,7 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
     const cos_a = Math.cos(phase * 2 * PI);
     ctx.save();
     ctx.beginPath(); ctx.arc(cx,cy,r,0,2*PI); ctx.clip();
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = 'rgba(10,14,23,0.93)';
+    ctx.fillStyle = 'rgba(10,14,23,0.97)';
     ctx.beginPath();
     if (phase < 0.5) {
       ctx.arc(cx,cy,r,1.5*PI,0.5*PI,true);
