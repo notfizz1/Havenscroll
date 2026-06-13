@@ -19,7 +19,7 @@ const ASSETS_TO_CACHE = [
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './assets/moon-photo.jpg'
+  './assets/moon-photo.png'
 ];
 
 self.addEventListener('install', event => {
