@@ -1212,7 +1212,7 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
     var cos_a = Math.cos(phase * 2 * PI);
     c.save();
     c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
-    c.fillStyle = 'rgba(10,14,23,0.94)';  // near-opaque: disc visible via earthshine only
+    c.fillStyle = 'rgba(10,14,23,0.88)';  // shadow: texture shows faintly through
     c.beginPath();
     if (phase < 0.5) {
       c.arc(cx, cy, r, 1.5*PI, 0.5*PI, true);
@@ -1226,15 +1226,20 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
     c.closePath(); c.fill();
     c.restore();
 
-    /* ── 2b. Illuminated-side glow ── */
+    /* ── 2b. Illuminated-side glow — tracks actual lit crescent ── */
     c.save();
     c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
-    var glowX = phase < 0.5 ? cx + r * 0.55 : cx - r * 0.55;
-    var litG = c.createRadialGradient(glowX, cy, 0, glowX, cy, r * 1.1);
-    litG.addColorStop(0,   'rgba(255,250,200,0.70)');
-    litG.addColorStop(0.3, 'rgba(220,185,80,0.22)');
-    litG.addColorStop(0.6, 'rgba(180,140,40,0.08)');
-    litG.addColorStop(1,   'rgba(150,110,20,0.00)');
+    var litCx = phase < 0.5
+      ? cx + r * (1 + Math.max(0, cos_a)) / 2
+      : cx - r * (1 + Math.max(0, cos_a)) / 2;
+    var litW   = r * (1 - Math.max(0, cos_a));
+    var innerR = Math.min(litW * 0.5, r * 0.12);
+    var outerR = Math.max(litW * 2.5, r * 0.35);
+    var litG = c.createRadialGradient(litCx, cy, innerR, litCx, cy, outerR);
+    litG.addColorStop(0,    'rgba(255,252,210,0.90)');
+    litG.addColorStop(0.35, 'rgba(240,215,130,0.55)');
+    litG.addColorStop(0.7,  'rgba(200,165,70,0.15)');
+    litG.addColorStop(1,    'rgba(170,130,40,0.00)');
     c.fillStyle = litG; c.fillRect(cx-r, cy-r, r*2, r*2);
     c.restore();
   }
