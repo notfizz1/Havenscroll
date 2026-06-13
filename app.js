@@ -1181,7 +1181,7 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
   c.save();
   c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
   if (_moonPhoto) {
-    const ps = r * 1.15;
+    const ps = r * 1.6;   // fill clip fully even if PNG has padding
     c.drawImage(_moonPhoto, cx-ps, cy-ps, ps*2, ps*2);
   } else {
     var grad = c.createRadialGradient(cx-r*0.18, cy-r*0.2, r*0.04, cx, cy, r);
@@ -1212,7 +1212,7 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
     var cos_a = Math.cos(phase * 2 * PI);
     c.save();
     c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
-    c.fillStyle = 'rgba(10,14,23,0.85)';  // semi-transparent: lunar texture shows through
+    c.fillStyle = 'rgba(10,14,23,0.94)';  // near-opaque: disc visible via earthshine only
     c.beginPath();
     if (phase < 0.5) {
       c.arc(cx, cy, r, 1.5*PI, 0.5*PI, true);
@@ -1231,7 +1231,7 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
     c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
     var glowX = phase < 0.5 ? cx + r * 0.55 : cx - r * 0.55;
     var litG = c.createRadialGradient(glowX, cy, 0, glowX, cy, r * 1.1);
-    litG.addColorStop(0,   'rgba(255,245,180,0.50)');
+    litG.addColorStop(0,   'rgba(255,250,200,0.70)');
     litG.addColorStop(0.3, 'rgba(220,185,80,0.22)');
     litG.addColorStop(0.6, 'rgba(180,140,40,0.08)');
     litG.addColorStop(1,   'rgba(150,110,20,0.00)');
