@@ -1,6 +1,14 @@
 {
-  "note": "Add a book: drop mybook.txt + mybook.png into /books/ and add an entry here.",
+  "note": "Add a book: drop mybook.txt + mybook.png into /books/ and add an entry here. type 'txt' books are paginated automatically; the cover png must share the txt filename.",
   "books": [
+    {
+      "id": "quran",
+      "title": "The Qur'an",
+      "author": "Saheeh International",
+      "type": "quran",
+      "txt": "./books/Quran.txt",
+      "cover": ""
+    },
     {
       "id": "lawful-prohibited",
       "title": "The Lawful and the Prohibited in Islam",
