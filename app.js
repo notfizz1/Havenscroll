@@ -1097,7 +1097,7 @@ const _SKY_LOCS_POST = { a: { lat: 59.913, lng: 10.752, name: 'Norway' },
 let _sameSkyActiveLoc = 'a'; // default: Danna's location
 let _sameSkyJD        = null;
 let _sameSkyPhase     = null;
-let _moonPhoto        = null; // HTMLImageElement once ./assets/moon-photo.jpg loads
+let _moonPhoto        = null; // HTMLImageElement once ./assets/moon-photo.png loads
 
 function _getSkyLocs() {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -1305,7 +1305,7 @@ function initSameSky() {
     if (c) renderMoonCanvas(c, _sameSkyPhase, ang);
   };
   img.onerror = function() { _moonPhoto = null; };
-  img.src = './assets/moon-photo.jpg';
+  img.src = './assets/moon-photo.png';
 }
 
 /* ==========================================================================
