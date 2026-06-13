@@ -510,7 +510,9 @@ body { display: flex; justify-content: center; align-items: center; background-i
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
 }
-.same-sky-loc-btn:active { transform: scale(0.93); }
+.same-sky-loc-btn:active {
+  transform: scale(0.93);
+}
 .same-sky-loc-btn.active {
   opacity: 0.9;
   color: var(--accent-gold);
@@ -535,4 +537,88 @@ body { display: flex; justify-content: center; align-items: center; background-i
   padding: 0 1rem;
 }
 
-/* HavenScroll v2.4.0 */
+/* HavenScroll v2.5.0 */
+
+/* ==========================================================================
+   11. PRAYER TIMES
+   ========================================================================== */
+.prayer-loc-tabs {
+  display: flex; gap: 0.45rem; margin-bottom: 0.8rem;
+}
+.prayer-tab {
+  flex: 1; padding: 0.32rem 0; font-size: 0.68rem; font-family: var(--font-sans);
+  letter-spacing: 0.07em; text-transform: uppercase;
+  background: transparent; color: var(--text-muted);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
+  cursor: pointer; transition: all 0.18s; -webkit-tap-highlight-color: transparent;
+}
+.prayer-tab--active {
+  background: rgba(212,175,55,0.13); color: var(--accent-gold);
+  border-color: rgba(212,175,55,0.32);
+}
+.prayer-date-row {
+  font-size: 0.67rem; color: var(--text-muted); text-align: center;
+  margin: 0 0 0.7rem; letter-spacing: 0.04em;
+}
+.prayer-list {
+  display: flex; flex-direction: column; gap: 0.38rem; margin-bottom: 0.75rem;
+}
+.prayer-row {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.5rem 0.6rem; border-radius: 8px;
+  background: rgba(255,255,255,0.025); cursor: pointer;
+  transition: background 0.15s; -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none;
+}
+.prayer-row--done { background: rgba(212,175,55,0.06); }
+.prayer-chk {
+  width: 20px; height: 20px; flex-shrink: 0;
+  border: 1.5px solid rgba(255,255,255,0.18); border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.18s;
+}
+.prayer-chk--on {
+  background: rgba(212,175,55,0.88); border-color: var(--accent-gold); color: #1a1510;
+}
+.prayer-chk svg { width: 12px; height: 12px; }
+.prayer-info {
+  flex: 1; display: flex; justify-content: space-between; align-items: center;
+}
+.pr-name {
+  font-size: 0.82rem; color: var(--text-primary); transition: color 0.18s;
+}
+.prayer-row--done .pr-name { color: var(--text-muted); text-decoration: line-through; text-decoration-color: rgba(148,163,184,0.45); }
+.pr-time {
+  font-size: 0.75rem; color: var(--accent-gold); font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+.pr-nd { font-size: 0.58rem; color: var(--text-muted); margin-left: 0.18rem; vertical-align: top; }
+.pr-est { font-size: 0.58rem; color: var(--text-muted); margin-left: 0.18rem; vertical-align: top; }
+.prayer-stats-row {
+  display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.65rem;
+}
+.pr-bar {
+  flex: 1; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden;
+}
+.pr-fill {
+  height: 100%; background: var(--accent-gold); border-radius: 2px; transition: width 0.4s ease;
+}
+.pr-count {
+  font-size: 0.67rem; color: var(--text-muted); white-space: nowrap; letter-spacing: 0.03em;
+}
+.prayer-quote {
+  display: flex; flex-direction: column; gap: 0.2rem;
+  padding: 0.6rem 0.65rem;
+  background: rgba(212,175,55,0.04);
+  border-left: 2px solid rgba(212,175,55,0.28);
+  border-radius: 0 6px 6px 0;
+  margin: 0;
+}
+.pr-qt {
+  display: block; font-size: 0.73rem; color: var(--text-muted);
+  font-style: italic; line-height: 1.45;
+}
+.pr-qr {
+  display: block; font-size: 0.62rem; color: var(--accent-gold);
+  letter-spacing: 0.05em; margin-top: 0.1rem;
+}

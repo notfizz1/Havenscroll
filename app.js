@@ -1097,7 +1097,6 @@ const _SKY_LOCS_POST = { a: { lat: 59.913, lng: 10.752, name: 'Norway' },
 let _sameSkyActiveLoc = 'a'; // default: Danna's location
 let _sameSkyJD        = null;
 let _sameSkyPhase     = null;
-let _moonPhoto        = null; // HTMLImageElement once ./assets/moon-photo.png loads
 
 function _getSkyLocs() {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -1155,7 +1154,7 @@ function _getMoonRaDec(jd) {
   return { ra, dec };
 }
 
-// q = atan2(sin H, tan phi * cos dec - sin dec * cos H)
+// q = atan2(sin H, tan φ · cos δ − sin δ · cos H)
 function _getParallacticAngle(lat_deg, lng_deg, jd) {
   const D2R = Math.PI / 180;
   const { ra, dec } = _getMoonRaDec(jd);
@@ -1171,85 +1170,67 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
   const r  = Math.min(W, Hc) * 0.44;
   const PI = Math.PI;
 
-  // Offscreen canvas: draw photo + shadow cleanly, then blit with rotation.
-  // Keeps compositing simple (source-over only) and shadow fully opaque.
+  // Render everything on an offscreen canvas first — no rotation, clean compositing.
+  // Then blit to main canvas with parallactic rotation. This avoids all composite quirks.
   const oc = document.createElement('canvas');
   oc.width = W; oc.height = Hc;
   const c = oc.getContext('2d');
 
-  /* 1. Surface: photo (1.15x to fill circle) or canvas gradient */
+  /* ── 1. Surface: canvas gradient moon ── */
   c.save();
   c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
-  if (_moonPhoto) {
-    const ps = r * 1.6;   // fill clip fully even if PNG has padding
-    c.drawImage(_moonPhoto, cx-ps, cy-ps, ps*2, ps*2);
-  } else {
-    var grad = c.createRadialGradient(cx-r*0.18, cy-r*0.2, r*0.04, cx, cy, r);
-    grad.addColorStop(0,    '#F5EDCC');
-    grad.addColorStop(0.28, '#D4B86A');
-    grad.addColorStop(0.62, '#9A7B42');
-    grad.addColorStop(0.86, '#6B5530');
-    grad.addColorStop(1,    '#3A2E1A');
-    c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.fillStyle = grad; c.fill();
-    [ {dx:-0.30,dy:-0.40,dr:0.13}, {dx: 0.32,dy:-0.15,dr:0.085},
-      {dx:-0.08,dy: 0.32,dr:0.17}, {dx: 0.50,dy: 0.12,dr:0.072},
-      {dx:-0.48,dy: 0.18,dr:0.09}, {dx: 0.14,dy: 0.52,dr:0.105},
-      {dx:-0.18,dy:-0.10,dr:0.052},{dx: 0.22,dy:-0.52,dr:0.08 }
-    ].forEach(function(p) {
-      if (Math.sqrt(p.dx*p.dx+p.dy*p.dy)+p.dr > 0.92) return;
-      var ix=cx+p.dx*r, iy=cy+p.dy*r, ir=p.dr*r;
-      var cg=c.createRadialGradient(ix-ir*0.2,iy-ir*0.2,0,ix,iy,ir);
-      cg.addColorStop(0,'rgba(45,30,12,0.50)');
-      cg.addColorStop(0.7,'rgba(25,18,8,0.32)');
-      cg.addColorStop(1,'rgba(255,235,150,0.10)');
-      c.beginPath(); c.arc(ix,iy,ir,0,2*PI); c.fillStyle=cg; c.fill();
-    });
-  }
+  const grad = c.createRadialGradient(cx-r*0.18, cy-r*0.2, r*0.04, cx, cy, r);
+  grad.addColorStop(0,    '#F5EDCC');
+  grad.addColorStop(0.28, '#D4B86A');
+  grad.addColorStop(0.62, '#9A7B42');
+  grad.addColorStop(0.86, '#6B5530');
+  grad.addColorStop(1,    '#3A2E1A');
+  c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.fillStyle = grad; c.fill();
+  [ {dx:-0.30,dy:-0.40,dr:0.13}, {dx: 0.32,dy:-0.15,dr:0.085},
+    {dx:-0.08,dy: 0.32,dr:0.17}, {dx: 0.50,dy: 0.12,dr:0.072},
+    {dx:-0.48,dy: 0.18,dr:0.09}, {dx: 0.14,dy: 0.52,dr:0.105},
+    {dx:-0.18,dy:-0.10,dr:0.052},{dx: 0.22,dy:-0.52,dr:0.08 }
+  ].forEach(function(p) {
+    if (Math.sqrt(p.dx*p.dx+p.dy*p.dy)+p.dr > 0.92) return;
+    var ix=cx+p.dx*r, iy=cy+p.dy*r, ir=p.dr*r;
+    var cg=c.createRadialGradient(ix-ir*0.2,iy-ir*0.2,0,ix,iy,ir);
+    cg.addColorStop(0,'rgba(45,30,12,0.50)');
+    cg.addColorStop(0.7,'rgba(25,18,8,0.32)');
+    cg.addColorStop(1,'rgba(255,235,150,0.10)');
+    c.beginPath(); c.arc(ix,iy,ir,0,2*PI); c.fillStyle=cg; c.fill();
+  });
   c.restore();
 
-  /* 2. Phase shadow — fully opaque so photo can't bleed through */
+  /* ── 2. Phase shadow — fully opaque, clipped to disc ── */
   if (phase < 0.49 || phase > 0.51) {
-    var cos_a = Math.cos(phase * 2 * PI);
+    const cos_a = Math.cos(phase * 2 * PI);
     c.save();
     c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
-    c.fillStyle = 'rgba(10,14,23,0.88)';  // shadow: texture shows faintly through
+    c.fillStyle = 'rgb(10,14,23)';  // fully opaque — no bleed-through
     c.beginPath();
     if (phase < 0.5) {
-      c.arc(cx, cy, r, 1.5*PI, 0.5*PI, true);
-      if (cos_a >= 0) { c.ellipse(cx, cy, cos_a*r, r, 0, 0.5*PI, 1.5*PI, true); }
-      else             { c.ellipse(cx, cy, -cos_a*r, r, 0, 0.5*PI, 1.5*PI, false); }
+      // Waxing: shadow on LEFT
+      c.arc(cx, cy, r, 1.5*PI, 0.5*PI, true);  // CCW left arc: top→left→bottom
+      cos_a >= 0
+        ? c.ellipse(cx, cy, cos_a*r,  r, 0, 0.5*PI, 1.5*PI, true)   // crescent: RIGHT terminator (large shadow)
+        : c.ellipse(cx, cy, -cos_a*r, r, 0, 0.5*PI, 1.5*PI, false);  // gibbous:  LEFT terminator (thin shadow)
     } else {
-      c.arc(cx, cy, r, 1.5*PI, 0.5*PI, false);
-      if (cos_a >= 0) { c.ellipse(cx, cy, cos_a*r, r, 0, 0.5*PI, 1.5*PI, false); }
-      else             { c.ellipse(cx, cy, -cos_a*r, r, 0, 0.5*PI, 1.5*PI, true); }
+      // Waning: shadow on RIGHT
+      c.arc(cx, cy, r, 1.5*PI, 0.5*PI, false); // CW right arc: top→right→bottom
+      cos_a >= 0
+        ? c.ellipse(cx, cy, cos_a*r,  r, 0, 0.5*PI, 1.5*PI, false)  // crescent: LEFT terminator (large shadow)
+        : c.ellipse(cx, cy, -cos_a*r, r, 0, 0.5*PI, 1.5*PI, true);   // gibbous:  RIGHT terminator (thin shadow)
     }
     c.closePath(); c.fill();
     c.restore();
-
-    /* ── 2b. Illuminated-side glow — tracks actual lit crescent ── */
-    c.save();
-    c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
-    var litCx = phase < 0.5
-      ? cx + r * (1 + Math.max(0, cos_a)) / 2
-      : cx - r * (1 + Math.max(0, cos_a)) / 2;
-    var litW   = r * (1 - Math.max(0, cos_a));
-    var innerR = Math.min(litW * 0.5, r * 0.12);
-    var outerR = Math.max(litW * 2.5, r * 0.35);
-    var litG = c.createRadialGradient(litCx, cy, innerR, litCx, cy, outerR);
-    litG.addColorStop(0,    'rgba(255,252,210,0.90)');
-    litG.addColorStop(0.35, 'rgba(240,215,130,0.55)');
-    litG.addColorStop(0.7,  'rgba(200,165,70,0.15)');
-    litG.addColorStop(1,    'rgba(170,130,40,0.00)');
-    c.fillStyle = litG; c.fillRect(cx-r, cy-r, r*2, r*2);
-    c.restore();
   }
 
-  /* 3. Earthshine on dark limb */
+  /* ── 3. Earthshine on dark limb ── */
   if (phase>0.04 && phase<0.96 && !(phase>0.46 && phase<0.54)) {
     c.save();
     c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
-    var esCx = phase<0.5 ? cx-r*0.28 : cx+r*0.28;
-    var esG = c.createRadialGradient(esCx, cy+r*0.08, 0, esCx, cy+r*0.08, r*0.85);
+    const esCx = phase<0.5 ? cx-r*0.28 : cx+r*0.28;
+    const esG = c.createRadialGradient(esCx, cy+r*0.08, 0, esCx, cy+r*0.08, r*0.85);
     esG.addColorStop(0,   'rgba(70,115,180,0.13)');
     esG.addColorStop(0.5, 'rgba(50,95,160,0.06)');
     esG.addColorStop(1,   'rgba(35,75,140,0.00)');
@@ -1257,16 +1238,16 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
     c.restore();
   }
 
-  /* 4. Limb darkening */
-  var limb = c.createRadialGradient(cx, cy, r*0.86, cx, cy, r);
+  /* ── 4. Limb darkening ── */
+  const limb = c.createRadialGradient(cx, cy, r*0.86, cx, cy, r);
   limb.addColorStop(0, 'rgba(0,0,0,0)');
   limb.addColorStop(1, 'rgba(0,0,0,0.32)');
   c.save();
   c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.fillStyle = limb; c.fill();
   c.restore();
 
-  /* 5. Blit to main canvas with parallactic rotation */
-  var ctx = canvas.getContext('2d');
+  /* ── 5. Copy to main canvas with parallactic rotation ── */
+  const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, W, Hc);
   ctx.save();
   ctx.translate(cx, cy);
@@ -1275,6 +1256,7 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
   ctx.drawImage(oc, 0, 0);
   ctx.restore();
 }
+
 // Called by onclick="switchSkyView('a')" / "switchSkyView('b')"
 function switchSkyView(locKey) {
   if (_sameSkyPhase === null || _sameSkyJD === null) return;
@@ -1283,7 +1265,7 @@ function switchSkyView(locKey) {
   const angle = _getParallacticAngle(loc.lat, loc.lng, _sameSkyJD);
   const canvas = document.getElementById('moon-canvas');
   if (canvas) renderMoonCanvas(canvas, _sameSkyPhase, angle);
-  ['a','b'].forEach(function(k) {
+  ['a','b'].forEach(k => {
     const btn = document.getElementById('btn-sky-' + k);
     if (btn) btn.classList.toggle('active', k === locKey);
   });
@@ -1295,12 +1277,12 @@ function initSameSky() {
   const illumEl = document.getElementById('moon-illum-pct');
   if (!canvas) return;
 
-  const result = getMoonPhase(new Date());
-  _sameSkyPhase = result.phase;
-  _sameSkyJD    = result.jd;
+  const { phase, illum, name, jd } = getMoonPhase(new Date());
+  _sameSkyPhase = phase;
+  _sameSkyJD    = jd;
 
-  if (nameEl)  nameEl.textContent  = result.name;
-  if (illumEl) illumEl.textContent = result.illum + '% illuminated';
+  if (nameEl)  nameEl.textContent  = name;
+  if (illumEl) illumEl.textContent = illum + '% illuminated';
 
   // Set button labels to current location names
   const locs = _getSkyLocs();
@@ -1310,30 +1292,195 @@ function initSameSky() {
   if (btnB) { btnB.textContent = locs.b.name; }
 
   // Render with Danna's parallactic angle by default
-  const angle0 = _getParallacticAngle(locs.a.lat, locs.a.lng, result.jd);
-  renderMoonCanvas(canvas, result.phase, angle0);
+  const angle0 = _getParallacticAngle(locs.a.lat, locs.a.lng, jd);
+  renderMoonCanvas(canvas, phase, angle0);
 
-  // Load photo — silently re-render when ready
-  const img = new Image();
-  img.onload = function() {
-    _moonPhoto = img;
-    const activeLoc = _getSkyLocs()[_sameSkyActiveLoc];
-    const ang = _getParallacticAngle(activeLoc.lat, activeLoc.lng, _sameSkyJD);
-    const c = document.getElementById('moon-canvas');
-    if (c) renderMoonCanvas(c, _sameSkyPhase, ang);
-  };
-  img.onerror = function() { _moonPhoto = null; };
-  img.src = './assets/moon-photo.png';
 }
 
 /* ==========================================================================
-   18. BOOT SEQUENCE
+   18. PRAYER TIMES — MWL offline calculation, no GPS / API required
+   ========================================================================== */
+
+// Russia tab hidden on/after this date; auto-switch to Norway
+const PRAYER_HIDE_RUSSIA = new Date(2026, 5, 22); // June 22 2026
+
+const PRAYER_LOCS = {
+  russia: { lat: 43.49806, lng: 43.61889, tz: 3, label: 'Russia'  },
+  sweden: { lat: 57.3044,  lng: 13.5408,  tz: 2, label: 'Sweden'  },
+  norway: { lat: 59.91149, lng: 10.75793, tz: 2, label: 'Norway'  }
+};
+
+const PRAYER_QUOTES = [
+  { ref: 'Quran 20:14',  text: 'Establish prayer for My remembrance.'              },
+  { ref: 'Quran 13:28',  text: 'In the remembrance of Allah, hearts find comfort.' },
+  { ref: 'Quran 2:152',  text: 'Remember Me; I will remember you.'                 },
+  { ref: 'Quran 2:153',  text: 'Seek comfort in patience and prayer.'              },
+  { ref: 'Quran 11:114', text: 'Good deeds wipe away misdeeds.'                    },
+  { ref: 'Quran 23:1',   text: 'Successful indeed are the believers.'              },
+  { ref: 'Quran 14:40',  text: 'Our Lord, accept my prayer.'                       },
+  { ref: 'Quran 29:45',  text: 'The remembrance of Allah is greater.'              },
+  { ref: 'Quran 94:5',   text: 'With every hardship comes ease.'                   },
+  { ref: 'Quran 4:103',  text: 'Prayer is prescribed at appointed times.'          }
+];
+
+const PRAYER_NAMES  = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+const PRAYER_LABELS = { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' };
+const PRAYER_KEY    = 'haven_prayers_v1';
+// MWL angles — edit here to switch method
+const _PM = { fa: 18, is: 17 };
+
+let _prSelLoc = null;
+
+/* ── Solar position helpers ── */
+function _prSunPos(date) {
+  const doy = Math.round((date - new Date(date.getFullYear(), 0, 1)) / 86400000) + 1;
+  const B   = (360 / 365) * (doy - 81) * Math.PI / 180;
+  const dec = 23.45 * Math.sin(B);
+  const eqt = (9.87 * Math.sin(2*B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B)) / 60;
+  return { dec, eqt };
+}
+
+function _prHA(lat, dec, angle) {
+  const D2R = Math.PI / 180;
+  const cosH = (Math.sin(angle*D2R) - Math.sin(lat*D2R)*Math.sin(dec*D2R))
+             / (Math.cos(lat*D2R)*Math.cos(dec*D2R));
+  return (cosH >= 1 || cosH <= -1) ? null : Math.acos(cosH) / D2R;
+}
+
+function calcPrayerTimes(date, key) {
+  const L = PRAYER_LOCS[key], D2R = Math.PI / 180;
+  const { dec, eqt } = _prSunPos(date);
+  const noon    = 12 + L.tz - L.lng / 15 - eqt;
+  const srHA    = _prHA(L.lat, dec, -0.833);
+  const sunrise = noon - srHA / 15;
+  const sunset  = noon + srHA / 15;
+  const night   = (sunrise + 24) - sunset; // hours from tonight's sunset to tomorrow's sunrise
+
+  // Asr — standard (shadow factor 1)
+  const asrDeg = Math.atan(1 / (1 + Math.tan(Math.abs(L.lat - dec) * D2R))) / D2R;
+  const asrHA  = _prHA(L.lat, dec, asrDeg);
+  const asr    = noon + asrHA / 15;
+
+  // Fajr / Isha with AngleBased high-latitude fallback
+  const faHA = _prHA(L.lat, dec, -_PM.fa);
+  const isHA = _prHA(L.lat, dec, -_PM.is);
+  let fajr, isha, faEst = false, isEst = false;
+
+  if (faHA !== null) { fajr = noon - faHA / 15; }
+  else               { faEst = true;  fajr = sunrise - (_PM.fa / 60) * night; }
+  if (isHA !== null) { isha = noon + isHA / 15; }
+  else               { isEst = true;  isha = sunset  + (_PM.is / 60) * night; }
+
+  return { fajr, dhuhr: noon, asr, maghrib: sunset, isha, faEst, isEst };
+}
+
+/* ── Format / storage helpers ── */
+function _prFmt(h) {
+  const w = ((h % 24) + 24) % 24;
+  const hh = Math.floor(w);
+  const mm = Math.round((w - hh) * 60);
+  if (mm === 60) return `${String(hh + 1).padStart(2,'0')}:00`;
+  return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+}
+
+function _prDK(d) { return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
+function _prLoad() { try { return JSON.parse(localStorage.getItem(PRAYER_KEY)) || {}; } catch(e) { return {}; } }
+function _prSave(data) { try { localStorage.setItem(PRAYER_KEY, JSON.stringify(data)); } catch(e) {} }
+function _prRussiaHidden() { const t = new Date(); t.setHours(0,0,0,0); return t >= PRAYER_HIDE_RUSSIA; }
+
+/* ── Interaction ── */
+function prayerTick(locKey, name) {
+  const data = _prLoad(), dk = _prDK(new Date());
+  if (!data[dk]) data[dk] = {};
+  if (!data[dk][locKey]) data[dk][locKey] = {};
+  data[dk][locKey][name] = !data[dk][locKey][name];
+  _prSave(data);
+  // Sound placeholder — drop your mp3 here when ready:
+  // try { new Audio('./assets/prayer-tick.mp3').play(); } catch(e) {}
+  triggerHaptic('tick');
+  renderPrayerUI();
+}
+
+function setPrayerLoc(key) { _prSelLoc = key; renderPrayerUI(); }
+
+/* ── Render ── */
+function renderPrayerUI() {
+  const tabs   = document.getElementById('prayer-loc-tabs');
+  const listEl = document.getElementById('prayer-list');
+  const statsEl= document.getElementById('prayer-stats-row');
+  const quoteEl= document.getElementById('prayer-quote');
+  const dateEl = document.getElementById('prayer-date-row');
+  if (!tabs) return;
+
+  const hide = _prRussiaHidden();
+  if (hide && _prSelLoc === 'russia') _prSelLoc = 'norway';
+  if (!_prSelLoc) _prSelLoc = hide ? 'sweden' : 'russia';
+
+  // Location tabs
+  const locs = hide ? ['sweden', 'norway'] : ['russia', 'sweden', 'norway'];
+  tabs.innerHTML = locs.map(k =>
+    `<button class="prayer-tab${k === _prSelLoc ? ' prayer-tab--active' : ''}" onclick="setPrayerLoc('${k}')">${PRAYER_LOCS[k].label}</button>`
+  ).join('');
+
+  // Date row
+  if (dateEl) {
+    dateEl.textContent = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long' });
+  }
+
+  // Prayer rows
+  const now   = new Date();
+  const times = calcPrayerTimes(now, _prSelLoc);
+  const data  = _prLoad();
+  const dk    = _prDK(now);
+  const today = (data[dk] && data[dk][_prSelLoc]) || {};
+
+  if (listEl) {
+    listEl.innerHTML = PRAYER_NAMES.map(n => {
+      const t    = times[n];
+      const chk  = !!today[n];
+      const isEst= (n === 'fajr' && times.faEst) || (n === 'isha' && times.isEst);
+      const nd   = t >= 24;
+      const tStr = _prFmt(t)
+                 + (nd   ? ' <span class="pr-nd">+1</span>'   : '')
+                 + (isEst? ' <span class="pr-est">est.</span>' : '');
+      return `<label class="prayer-row${chk ? ' prayer-row--done' : ''}" onclick="prayerTick('${_prSelLoc}','${n}')">` +
+        `<div class="prayer-chk${chk ? ' prayer-chk--on' : ''}">` +
+        (chk ? `<svg viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>` : '') +
+        `</div>` +
+        `<div class="prayer-info"><span class="pr-name">${PRAYER_LABELS[n]}</span><span class="pr-time">${tStr}</span></div>` +
+        `</label>`;
+    }).join('');
+  }
+
+  // Stats / progress bar
+  const done = PRAYER_NAMES.filter(n => today[n]).length;
+  if (statsEl) {
+    statsEl.innerHTML =
+      `<div class="pr-bar"><div class="pr-fill" style="width:${(done/5)*100}%"></div></div>` +
+      `<span class="pr-count">${done} / 5 today</span>`;
+  }
+
+  // Rotating Quran quote (rotates each hour)
+  if (quoteEl) {
+    const q = PRAYER_QUOTES[Math.floor(Date.now() / 3600000) % PRAYER_QUOTES.length];
+    quoteEl.innerHTML = `<span class="pr-qt">“${q.text}”</span><span class="pr-qr">${q.ref}</span>`;
+  }
+}
+
+function initPrayers() {
+  _prSelLoc = _prRussiaHidden() ? 'sweden' : 'russia';
+  renderPrayerUI();
+}
+
+/* ==========================================================================
+   19. BOOT SEQUENCE
    ========================================================================== */
 window.addEventListener('DOMContentLoaded', async () => {
   applyDaypartTheme();
   setInterval(applyDaypartTheme, 10 * 60 * 1000);  // re-check palette every 10 min
   setupIOSHapticBridge();
   initSameSky();
+  initPrayers();
   runSplashSequence();
   updateStreak();
   startTimeTracking();
@@ -1350,4 +1497,4 @@ window.addEventListener('DOMContentLoaded', async () => {
   setTimeout(checkForVersionUpdate, 3000);
   setInterval(checkForVersionUpdate, 5 * 60 * 1000);
 });
-/* HavenScroll v2.3.0 */
+/* HavenScroll v2.4.0 */

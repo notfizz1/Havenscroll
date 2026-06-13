@@ -75,11 +75,15 @@
 
     <!-- HAVEN BOOKSHELF + 3D BOOK READER -->
     <div id="books-view">
+
+      <!-- SHELF (default) -->
       <div id="bookshelf-view">
         <div class="oasis-header" style="margin-bottom:0.5rem; padding-bottom:0.5rem; flex-shrink:0;"><h2 class="oasis-title">Haven <span>Bookshelf</span></h2><p class="oasis-subtitle">Your private offline library. Tap a cover to start reading.</p></div>
         <div id="continue-reading-slot"></div>
         <div id="bookshelf-grid"></div>
       </div>
+
+      <!-- READER (opens from a shelf tile) -->
       <div id="book-reader-view">
         <div class="reader-header">
           <button class="reader-back-btn" onclick="closeReader()">‹ Shelf</button>
@@ -94,6 +98,7 @@
           <div class="book-pagination"><span id="book-author-tag" style="text-transform: uppercase; letter-spacing: 0.05em; font-size:0.65rem;">Haven Library</span><span id="book-progress-text">Page 1 of 1</span></div>
         </div>
       </div>
+
     </div>
 
     <!-- OASIS TOOLKIT -->
@@ -117,12 +122,25 @@
         <p class="same-sky-caption">The same moon rises over both of you tonight.</p>
       </div>
 
+      <!-- PRAYER TIMES -->
+      <div class="oasis-drawer" id="drawer-prayers">
+        <button class="drawer-trigger" onclick="toggleDrawer('drawer-prayers')"><span>☽ Prayer Times</span><span class="drawer-arrow">▶</span></button>
+        <div class="drawer-content">
+          <div class="prayer-loc-tabs" id="prayer-loc-tabs"></div>
+          <p class="prayer-date-row" id="prayer-date-row"></p>
+          <div class="prayer-list" id="prayer-list"></div>
+          <div class="prayer-stats-row" id="prayer-stats-row"></div>
+          <p class="prayer-quote" id="prayer-quote"></p>
+        </div>
+      </div>
+
       <div class="challenge-panel">
         <div class="challenge-badge">Your Micro-Task Today</div>
         <div class="challenge-text" id="challenge-display">Relax your shoulders, slightly part your teeth, and let your jaw completely unclench. Notice the weight on your seat.</div>
         <div class="challenge-action"><span style="font-size:0.68rem; color:var(--text-muted);">Completely offline</span><button class="challenge-btn" id="challenge-btn" onclick="completeDailyChallenge()">Complete Task</button></div>
       </div>
 
+      <!-- PERSONAL STATS / JOURNEY -->
       <div class="oasis-drawer" id="drawer-journey">
         <button class="drawer-trigger" onclick="toggleDrawer('drawer-journey')"><span>🌱 Your Journey</span><span class="drawer-arrow">▶</span></button>
         <div class="drawer-content">
@@ -144,6 +162,7 @@
         </div>
       </div>
 
+      <!-- TACTILE WORRY STONE -->
       <div class="oasis-drawer" id="drawer-stone">
         <button class="drawer-trigger" onclick="toggleDrawer('drawer-stone')"><span>🪨 Worry Stone</span><span class="drawer-arrow">▶</span></button>
         <div class="drawer-content">
@@ -155,6 +174,7 @@
         </div>
       </div>
 
+      <!-- PODCAST MODULE -->
       <div class="oasis-drawer" id="drawer-podcasts">
         <button class="drawer-trigger" onclick="toggleDrawer('drawer-podcasts')"><span>🎙️ Podcasts (Offline)</span><span class="drawer-arrow">▶</span></button>
         <div class="drawer-content">
@@ -215,8 +235,10 @@
       <button onclick="dismissUpdateBanner()" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer; padding:0.25rem; flex-shrink:0; line-height:1;">×</button>
     </div>
 
+    <!-- HIDDEN NATIVE AUDIO ELEMENT FOR PODCASTS -->
     <audio id="native-audio" style="display:none;"></audio>
 
+    <!-- GLOBAL AUDIO PLAYER -->
     <div id="global-audio-player">
       <div class="player-top-row">
         <div class="player-thumb">🎙️</div>
@@ -253,6 +275,7 @@
       </div>
     </div>
 
+    <!-- BOTTOM APP NAV BAR -->
     <div id="bottom-nav">
       <button class="tab-btn active" id="tab-stream" onclick="switchTab('stream')">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
@@ -271,4 +294,4 @@
 
   <script src="./app.js"></script>
 </body>
-            </html>
+</html>
