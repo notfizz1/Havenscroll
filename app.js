@@ -1212,7 +1212,7 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
     var cos_a = Math.cos(phase * 2 * PI);
     c.save();
     c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
-    c.fillStyle = 'rgb(10,14,23)';
+    c.fillStyle = 'rgba(10,14,23,0.85)';  // semi-transparent: lunar texture shows through
     c.beginPath();
     if (phase < 0.5) {
       c.arc(cx, cy, r, 1.5*PI, 0.5*PI, true);
@@ -1224,6 +1224,18 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
       else             { c.ellipse(cx, cy, -cos_a*r, r, 0, 0.5*PI, 1.5*PI, true); }
     }
     c.closePath(); c.fill();
+    c.restore();
+
+    /* ── 2b. Illuminated-side glow ── */
+    c.save();
+    c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
+    var glowX = phase < 0.5 ? cx + r * 0.55 : cx - r * 0.55;
+    var litG = c.createRadialGradient(glowX, cy, 0, glowX, cy, r * 1.1);
+    litG.addColorStop(0,   'rgba(255,245,180,0.50)');
+    litG.addColorStop(0.3, 'rgba(220,185,80,0.22)');
+    litG.addColorStop(0.6, 'rgba(180,140,40,0.08)');
+    litG.addColorStop(1,   'rgba(150,110,20,0.00)');
+    c.fillStyle = litG; c.fillRect(cx-r, cy-r, r*2, r*2);
     c.restore();
   }
 
