@@ -1166,96 +1166,97 @@ function _getParallacticAngle(lat_deg, lng_deg, jd) {
 }
 
 function renderMoonCanvas(canvas, phase, rotAngle) {
-  const ctx = canvas.getContext('2d');
   const W = canvas.width, Hc = canvas.height;
   const cx = W/2, cy = Hc/2;
   const r  = Math.min(W, Hc) * 0.44;
   const PI = Math.PI;
 
-  ctx.clearRect(0, 0, W, Hc);
+  // Offscreen canvas: draw photo + shadow cleanly, then blit with rotation.
+  // Keeps compositing simple (source-over only) and shadow fully opaque.
+  const oc = document.createElement('canvas');
+  oc.width = W; oc.height = Hc;
+  const c = oc.getContext('2d');
 
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(rotAngle || 0);
-  ctx.translate(-cx, -cy);
-
-  /* -- 1. Clip to disc -- */
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, 2*PI);
-  ctx.clip();
-
-  /* -- 2. Surface: real photo if loaded, else canvas gradient -- */
+  /* 1. Surface: photo (1.15x to fill circle) or canvas gradient */
+  c.save();
+  c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
   if (_moonPhoto) {
-    const ps=r*1.15; ctx.drawImage(_moonPhoto, cx-ps, cy-ps, ps*2, ps*2);
+    const ps = r * 1.15;
+    c.drawImage(_moonPhoto, cx-ps, cy-ps, ps*2, ps*2);
   } else {
-    const grad = ctx.createRadialGradient(cx-r*0.18, cy-r*0.2, r*0.04, cx, cy, r);
+    var grad = c.createRadialGradient(cx-r*0.18, cy-r*0.2, r*0.04, cx, cy, r);
     grad.addColorStop(0,    '#F5EDCC');
     grad.addColorStop(0.28, '#D4B86A');
     grad.addColorStop(0.62, '#9A7B42');
     grad.addColorStop(0.86, '#6B5530');
     grad.addColorStop(1,    '#3A2E1A');
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, 2*PI);
-    ctx.fillStyle = grad;
-    ctx.fill();
+    c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.fillStyle = grad; c.fill();
     [ {dx:-0.30,dy:-0.40,dr:0.13}, {dx: 0.32,dy:-0.15,dr:0.085},
       {dx:-0.08,dy: 0.32,dr:0.17}, {dx: 0.50,dy: 0.12,dr:0.072},
       {dx:-0.48,dy: 0.18,dr:0.09}, {dx: 0.14,dy: 0.52,dr:0.105},
       {dx:-0.18,dy:-0.10,dr:0.052},{dx: 0.22,dy:-0.52,dr:0.08 }
-    ].forEach(function(c) {
-      if (Math.sqrt(c.dx*c.dx+c.dy*c.dy)+c.dr > 0.92) return;
-      var ix=cx+c.dx*r, iy=cy+c.dy*r, ir=c.dr*r;
-      var cg=ctx.createRadialGradient(ix-ir*0.2,iy-ir*0.2,0,ix,iy,ir);
+    ].forEach(function(p) {
+      if (Math.sqrt(p.dx*p.dx+p.dy*p.dy)+p.dr > 0.92) return;
+      var ix=cx+p.dx*r, iy=cy+p.dy*r, ir=p.dr*r;
+      var cg=c.createRadialGradient(ix-ir*0.2,iy-ir*0.2,0,ix,iy,ir);
       cg.addColorStop(0,'rgba(45,30,12,0.50)');
       cg.addColorStop(0.7,'rgba(25,18,8,0.32)');
       cg.addColorStop(1,'rgba(255,235,150,0.10)');
-      ctx.beginPath(); ctx.arc(ix,iy,ir,0,2*PI); ctx.fillStyle=cg; ctx.fill();
+      c.beginPath(); c.arc(ix,iy,ir,0,2*PI); c.fillStyle=cg; c.fill();
     });
   }
-  ctx.restore(); // end clip
+  c.restore();
 
-  /* -- 3. Phase shadow -- */
+  /* 2. Phase shadow — fully opaque so photo can't bleed through */
   if (phase < 0.49 || phase > 0.51) {
-    const cos_a = Math.cos(phase * 2 * PI);
-    ctx.save();
-    ctx.beginPath(); ctx.arc(cx,cy,r,0,2*PI); ctx.clip();
-    ctx.fillStyle = 'rgba(10,14,23,0.97)';
-    ctx.beginPath();
+    var cos_a = Math.cos(phase * 2 * PI);
+    c.save();
+    c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
+    c.fillStyle = 'rgb(10,14,23)';
+    c.beginPath();
     if (phase < 0.5) {
-      ctx.arc(cx,cy,r,1.5*PI,0.5*PI,true);
-      cos_a >= 0
-        ? ctx.ellipse(cx,cy,cos_a*r,r,0,0.5*PI,1.5*PI,false)
-        : ctx.ellipse(cx,cy,-cos_a*r,r,0,0.5*PI,1.5*PI,true);
+      c.arc(cx, cy, r, 1.5*PI, 0.5*PI, true);
+      if (cos_a >= 0) { c.ellipse(cx, cy, cos_a*r, r, 0, 0.5*PI, 1.5*PI, false); }
+      else             { c.ellipse(cx, cy, -cos_a*r, r, 0, 0.5*PI, 1.5*PI, true); }
     } else {
-      ctx.arc(cx,cy,r,1.5*PI,0.5*PI,false);
-      ctx.ellipse(cx,cy,Math.abs(cos_a)*r,r,0,0.5*PI,1.5*PI,true);
+      c.arc(cx, cy, r, 1.5*PI, 0.5*PI, false);
+      c.ellipse(cx, cy, Math.abs(cos_a)*r, r, 0, 0.5*PI, 1.5*PI, true);
     }
-    ctx.closePath(); ctx.fill(); ctx.restore();
+    c.closePath(); c.fill();
+    c.restore();
   }
 
-  /* -- 4. Earthshine -- */
+  /* 3. Earthshine on dark limb */
   if (phase>0.04 && phase<0.96 && !(phase>0.46 && phase<0.54)) {
-    ctx.save();
-    ctx.beginPath(); ctx.arc(cx,cy,r,0,2*PI); ctx.clip();
-    const esCx = phase<0.5 ? cx-r*0.28 : cx+r*0.28;
-    const esG  = ctx.createRadialGradient(esCx,cy+r*0.08,0,esCx,cy+r*0.08,r*0.85);
-    esG.addColorStop(0,  'rgba(70,115,180,0.13)');
-    esG.addColorStop(0.5,'rgba(50,95,160,0.06)');
-    esG.addColorStop(1,  'rgba(35,75,140,0.00)');
-    ctx.fillStyle=esG; ctx.fillRect(cx-r,cy-r,r*2,r*2); ctx.restore();
+    c.save();
+    c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
+    var esCx = phase<0.5 ? cx-r*0.28 : cx+r*0.28;
+    var esG = c.createRadialGradient(esCx, cy+r*0.08, 0, esCx, cy+r*0.08, r*0.85);
+    esG.addColorStop(0,   'rgba(70,115,180,0.13)');
+    esG.addColorStop(0.5, 'rgba(50,95,160,0.06)');
+    esG.addColorStop(1,   'rgba(35,75,140,0.00)');
+    c.fillStyle = esG; c.fillRect(cx-r, cy-r, r*2, r*2);
+    c.restore();
   }
 
-  /* -- 5. Limb darkening -- */
-  const limb = ctx.createRadialGradient(cx,cy,r*0.86,cx,cy,r);
-  limb.addColorStop(0,'rgba(0,0,0,0)');
-  limb.addColorStop(1,'rgba(0,0,0,0.32)');
+  /* 4. Limb darkening */
+  var limb = c.createRadialGradient(cx, cy, r*0.86, cx, cy, r);
+  limb.addColorStop(0, 'rgba(0,0,0,0)');
+  limb.addColorStop(1, 'rgba(0,0,0,0.32)');
+  c.save();
+  c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.fillStyle = limb; c.fill();
+  c.restore();
+
+  /* 5. Blit to main canvas with parallactic rotation */
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, Hc);
   ctx.save();
-  ctx.beginPath(); ctx.arc(cx,cy,r,0,2*PI); ctx.fillStyle=limb; ctx.fill(); ctx.restore();
-
-  ctx.restore(); // end parallactic rotation
+  ctx.translate(cx, cy);
+  ctx.rotate(rotAngle || 0);
+  ctx.translate(-cx, -cy);
+  ctx.drawImage(oc, 0, 0);
+  ctx.restore();
 }
-
 // Called by onclick="switchSkyView('a')" / "switchSkyView('b')"
 function switchSkyView(locKey) {
   if (_sameSkyPhase === null || _sameSkyJD === null) return;
