@@ -1,4 +1,4 @@
-const CACHE_NAME = 'havenscroll-cache-v2.3.0';
+const CACHE_NAME = 'havenscroll-cache-v2.4.0';
 
 // Everything the sanctuary needs to run with zero network
 const ASSETS_TO_CACHE = [
@@ -18,7 +18,8 @@ const ASSETS_TO_CACHE = [
   './video/satire-bg.mp4',
   './icons/icon-180.png',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './assets/moon-photo.jpg'
 ];
 
 self.addEventListener('install', event => {
