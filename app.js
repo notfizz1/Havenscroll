@@ -1,16 +1,16 @@
 /* ==========================================================================
-   HAVENSCROLL v2.0 — app.js
+   HAVENSCROLL v2.0 â app.js
    Architecture:
-     data.json  → all content (quotes, book, letters, challenges, podcasts)
-     style.css  → all presentation incl. time-of-day themes
-     app.js     → logic only. No analytics, no network calls except same-origin
+     data.json  â all content (quotes, book, letters, challenges, podcasts)
+     style.css  â all presentation incl. time-of-day themes
+     app.js     â logic only. No analytics, no network calls except same-origin
                   data/version fetches. 100% private.
    ========================================================================== */
 
 'use strict';
 
 /* ==========================================================================
-   1. CONTENT STORE — loaded from data.json at boot (Pillar 4)
+   1. CONTENT STORE â loaded from data.json at boot (Pillar 4)
    ========================================================================== */
 let baseCards = [];
 let bookPages = [];
@@ -40,12 +40,12 @@ async function loadContentData() {
 }
 
 /* ==========================================================================
-   2. HAPTIC SYMPHONY — distinct tactile profiles (Pillar 3)
+   2. HAPTIC SYMPHONY â distinct tactile profiles (Pillar 3)
    ========================================================================== */
 const HAPTIC_PROFILES = {
   tick:   8,                                       // generic ui tick
   page:   20,                                      // light 20ms book page turn
-  save:   [30, 70, 30],                            // double pulse — saving a quote
+  save:   [30, 70, 30],                            // double pulse â saving a quote
   heavy:  [15, 30, 15],
   wave:   35,
   stone:  12,                                      // continuous soft worry-stone pulse
@@ -65,10 +65,10 @@ function triggerHaptic(type) {
    real Taptic Engine tick when an <input type="checkbox" switch> toggles.
    Two layers:
    (a) PROGRAMMATIC: a hidden switch we .click() to replay vibration
-       patterns as timed tap sequences. Works on iOS 17.4 – 26.4.
+       patterns as timed tap sequences. Works on iOS 17.4 â 26.4.
        (Apple disabled programmatic clicks triggering the haptic in 26.5.)
    (b) DIRECT-TOUCH: invisible switch overlays injected inside real tap
-       targets (stars, tabs, pills, drawers, page margins…). The finger
+       targets (stars, tabs, pills, drawers, page marginsâ¦). The finger
        physically toggles the switch, so the OS haptic still fires on
        iOS 26.5+. The event bubbles up, so the button works normally.
    ------------------------------------------------------------------------ */
@@ -89,8 +89,8 @@ function setupIOSHapticBridge() {
   input.tabIndex = -1;
   iosHapticLabel.appendChild(input);
   document.body.appendChild(iosHapticLabel);
-  // (b) overlay switches inside tap targets — re-armed whenever the DOM
-  // changes (feed re-renders, drawers, podcast lists…)
+  // (b) overlay switches inside tap targets â re-armed whenever the DOM
+  // changes (feed re-renders, drawers, podcast listsâ¦)
   armNativeHapticTargets();
   const mo = new MutationObserver(() => {
     if (mo._raf) return;
@@ -104,7 +104,7 @@ function iosTap() {
   try { iosHapticLabel.click(); } catch (e) { /* ignore */ }
 }
 
-// Convert a vibration pattern [on, off, on, …] into discrete Taptic ticks:
+// Convert a vibration pattern [on, off, on, â¦] into discrete Taptic ticks:
 // one tick at the start of every ON segment, plus extra ticks every 110ms
 // inside long ON segments to emulate "rolling" vibrations.
 function iosPlayPattern(pattern) {
@@ -138,7 +138,7 @@ function armNativeHapticTargets() {
 }
 
 /* ==========================================================================
-   3. HIDDEN PROGRESSION ENGINE — XP, levels, streak, time (Pillar 2)
+   3. HIDDEN PROGRESSION ENGINE â XP, levels, streak, time (Pillar 2)
    All stored in localStorage only. Never displayed unless the user opens
    the "Your Journey" drawer. No pressure mechanics, no timers.
    ========================================================================== */
@@ -202,12 +202,12 @@ function renderStats() {
   document.getElementById('level-badge').innerText = lvl;
   document.getElementById('level-name').innerText = name;
   document.getElementById('level-bar').style.width = pct + '%';
-  document.getElementById('level-sub').innerText = pct + '% toward the next bloom · ' + stats.tasksDone + ' micro-tasks · best streak ' + stats.bestStreak + ' days';
+  document.getElementById('level-sub').innerText = pct + '% toward the next bloom Â· ' + stats.tasksDone + ' micro-tasks Â· best streak ' + stats.bestStreak + ' days';
 }
 
 /* ==========================================================================
    4. DYNAMIC TIME-OF-DAY THEME (Pillar 1)
-   Palettes themselves live in style.css under body[data-daypart="…"]
+   Palettes themselves live in style.css under body[data-daypart="â¦"]
    ========================================================================== */
 function applyDaypartTheme() {
   const h = new Date().getHours();
@@ -219,7 +219,7 @@ function applyDaypartTheme() {
 }
 
 /* ==========================================================================
-   5. CINEMATIC SPLASH — fade + local swoosh audio (Pillar 1)
+   5. CINEMATIC SPLASH â fade + local swoosh audio (Pillar 1)
    ========================================================================== */
 function runSplashSequence() {
   const splash = document.getElementById('splash-screen');
@@ -227,7 +227,7 @@ function runSplashSequence() {
   if (audio) {
     audio.volume = 0.55;
     audio.play().catch(() => {
-      // Autoplay blocked — play on the user's very first touch instead
+      // Autoplay blocked â play on the user's very first touch instead
       const unlock = () => {
         if (!splash.classList.contains('hidden')) audio.play().catch(() => {});
         document.removeEventListener('pointerdown', unlock);
@@ -322,14 +322,14 @@ function createCardElement(item, absoluteIndex, isSaved) {
   const card = document.createElement('div'); card.className = `card ${styleClass}`; card.dataset.id = item.id; card.dataset.index = absoluteIndex;
   if (item.isPacer) {
     card.className = "card card-neuro pacer-card-root";
-    card.innerHTML = `${buildVideoLayer('card-neuro')}<div class="card-glow"></div><div class="card-header"><div class="track-meta"><span class="track-num">BIO-PACER RESET</span><span class="track-origin">${item.author}</span></div><div class="card-badge">≈ Huberman Pacer</div></div><div class="card-body"><p class="quote-text" style="font-size:0.95rem; line-height:1.5; color:var(--text-muted); margin-bottom:1rem; text-align:center;">${item.text}</p><div class="pacer-container"><div class="pacer-view-box" id="pacer-box-target"><div class="pacer-aura-element" id="pacer-aura"></div><div class="pacer-circle-element" id="pacer-circle"></div></div><div class="pacer-instruction-label" id="pacer-label">Tap target circle to begin</div></div></div><div class="card-footer"><div class="curator-credits"><span class="credits-icon">♥</span><span>Tactile Resync Engine</span></div><div class="meta-metrics"><div class="metric-item"><span>BIOLOGICAL HACK</span></div></div><div class="action-btn-container"><button class="star-btn ${isSaved ? 'saved' : ''}" onclick="toggleSaveCard(event, ${item.id})">${isSaved ? getStarFilledSVG() : getStarOutlineSVG()}</button></div></div>`;
+    card.innerHTML = `${buildVideoLayer('card-neuro')}<div class="card-glow"></div><div class="card-header"><div class="track-meta"><span class="track-num">BIO-PACER RESET</span><span class="track-origin">${item.author}</span></div><div class="card-badge">â Huberman Pacer</div></div><div class="card-body"><p class="quote-text" style="font-size:0.95rem; line-height:1.5; color:var(--text-muted); margin-bottom:1rem; text-align:center;">${item.text}</p><div class="pacer-container"><div class="pacer-view-box" id="pacer-box-target"><div class="pacer-aura-element" id="pacer-aura"></div><div class="pacer-circle-element" id="pacer-circle"></div></div><div class="pacer-instruction-label" id="pacer-label">Tap target circle to begin</div></div></div><div class="card-footer"><div class="curator-credits"><span class="credits-icon">â¥</span><span>Tactile Resync Engine</span></div><div class="meta-metrics"><div class="metric-item"><span>BIOLOGICAL HACK</span></div></div><div class="action-btn-container"><button class="star-btn ${isSaved ? 'saved' : ''}" onclick="toggleSaveCard(event, ${item.id})">${isSaved ? getStarFilledSVG() : getStarOutlineSVG()}</button></div></div>`;
     setTimeout(() => { const target = card.querySelector('#pacer-box-target'); if (target) target.addEventListener('click', toggleBreathingEngine); }, 50);
     attachGlowTracking(card);
     return card;
   }
   const wordCount = item.text.split(' ').length; const readTime = Math.max(1, Math.round(wordCount / 180 * 10) / 10);
-  card.innerHTML = `${buildVideoLayer(styleClass)}<div class="card-glow"></div><div class="card-header"><div class="track-meta"><span class="track-num">TRACK #${String(item.id).padStart(2, '0')}</span><span class="track-origin">${item.author}</span></div><div class="card-badge"><span>${item.icon}</span><span>${item.category}</span></div></div><div class="card-body"><div class="quote-mark">“</div><p class="quote-text">${item.text}</p><p class="quote-author">${item.author}</p></div><div class="card-footer"><div class="curator-credits"><span class="credits-icon">♥</span><span>Curated for Danna</span></div><div class="meta-metrics"><div class="metric-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span>${readTime}m read</span></div><div class="metric-item"><span>OFFLINE</span></div></div><div class="action-btn-container"><button class="star-btn ${isSaved ? 'saved' : ''}" onclick="toggleSaveCard(event, ${item.id})">${isSaved ? getStarFilledSVG() : getStarOutlineSVG()}</button></div></div>`;
-  if (absoluteIndex === 0) { const swipe = document.createElement('div'); swipe.className = 'swipe-indicator'; swipe.innerText = 'Swipe Up ▽'; card.appendChild(swipe); }
+  card.innerHTML = `${buildVideoLayer(styleClass)}<div class="card-glow"></div><div class="card-header"><div class="track-meta"><span class="track-num">TRACK #${String(item.id).padStart(2, '0')}</span><span class="track-origin">${item.author}</span></div><div class="card-badge"><span>${item.icon}</span><span>${item.category}</span></div></div><div class="card-body"><div class="quote-mark">â</div><p class="quote-text">${item.text}</p><p class="quote-author">${item.author}</p></div><div class="card-footer"><div class="curator-credits"><span class="credits-icon">â¥</span><span>Curated for Danna</span></div><div class="meta-metrics"><div class="metric-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span>${readTime}m read</span></div><div class="metric-item"><span>OFFLINE</span></div></div><div class="action-btn-container"><button class="star-btn ${isSaved ? 'saved' : ''}" onclick="toggleSaveCard(event, ${item.id})">${isSaved ? getStarFilledSVG() : getStarOutlineSVG()}</button></div></div>`;
+  if (absoluteIndex === 0) { const swipe = document.createElement('div'); swipe.className = 'swipe-indicator'; swipe.innerText = 'Swipe Up â½'; card.appendChild(swipe); }
   attachGlowTracking(card);
   return card;
 }
@@ -375,7 +375,7 @@ function setupParallax() {
 }
 
 /* ==========================================================================
-   8. HAVEN BOOKSHELF — multi-book 3D reader with saved progress
+   8. HAVEN BOOKSHELF â multi-book 3D reader with saved progress
    Books live in /books/: mybook.txt + mybook.png (same filename) plus an
    entry in books/books.json. Plain-text books are sanitized and paginated
    automatically; progress per book is stored in localStorage.
@@ -418,7 +418,7 @@ function paginateText(raw, book) {
   if (startMatch) text = text.slice(startMatch.index + startMatch[0].length);
   const paragraphs = text.split(/\n\s*\n/).map(p => p.replace(/\s*\n\s*/g, ' ').trim()).filter(p => p.length);
 
-  const PAGE_BUDGET = 850; // chars per page — comfortable, not tiny
+  const PAGE_BUDGET = 850; // chars per page â comfortable, not tiny
   const pages = [];
   let buf = '', size = 0;
   const flush = () => { if (buf) { pages.push('<div class="txt-page">' + buf + '</div>'); buf = ''; size = 0; } };
@@ -446,7 +446,7 @@ function paginateText(raw, book) {
     });
   });
   flush();
-  const coverPage = '<div style="text-align:center; margin-top:2rem; padding:1rem;"><div style="font-size:0.72rem; color:var(--accent-gold); letter-spacing:0.2em; text-transform:uppercase; margin-bottom:1.5rem;">Oasis Library</div><h2 style="font-family:var(--font-serif); font-size:1.7rem; line-height:1.35; margin-bottom:1rem; color:#FFF;">' + escapeHTML(book.title) + '</h2><div style="width:40px; height:1px; background:var(--accent-gold); margin:1.5rem auto;"></div><p style="font-size:0.82rem; color:var(--text-muted); font-style:italic; margin-bottom:0.25rem;">by</p><p style="font-weight:700; color:var(--text-primary); letter-spacing:0.05em;">' + escapeHTML((book.author || 'Unknown').toUpperCase()) + '</p><div style="margin-top:4.5rem; font-size:0.72rem; color:var(--text-muted); animation: heartbeat 2s infinite;">Tap the right margin to start reading →</div></div>';
+  const coverPage = '<div style="text-align:center; margin-top:2rem; padding:1rem;"><div style="font-size:0.72rem; color:var(--accent-gold); letter-spacing:0.2em; text-transform:uppercase; margin-bottom:1.5rem;">Oasis Library</div><h2 style="font-family:var(--font-serif); font-size:1.7rem; line-height:1.35; margin-bottom:1rem; color:#FFF;">' + escapeHTML(book.title) + '</h2><div style="width:40px; height:1px; background:var(--accent-gold); margin:1.5rem auto;"></div><p style="font-size:0.82rem; color:var(--text-muted); font-style:italic; margin-bottom:0.25rem;">by</p><p style="font-weight:700; color:var(--text-primary); letter-spacing:0.05em;">' + escapeHTML((book.author || 'Unknown').toUpperCase()) + '</p><div style="margin-top:4.5rem; font-size:0.72rem; color:var(--text-muted); animation: heartbeat 2s infinite;">Tap the right margin to start reading â</div></div>';
   pages.unshift(coverPage);
   return pages;
 }
@@ -461,11 +461,11 @@ function renderBookshelf() {
   const lastProg = last ? s.books[last.id] : null;
   if (last && lastProg && lastProg.page > 0) {
     slot.innerHTML = '<div class="continue-card" onclick="openBook(\'' + last.id + '\')">'
-      + '<div class="continue-thumb">' + (last.cover ? '<img src="' + last.cover + '" alt="" onerror="this.remove()">' : '📖') + '</div>'
+      + '<div class="continue-thumb">' + (last.cover ? '<img src="' + last.cover + '" alt="" onerror="this.remove()">' : 'ð') + '</div>'
       + '<div class="continue-info"><div class="continue-label">Continue where you left off</div>'
       + '<div class="continue-title">' + escapeHTML(last.title) + '</div>'
       + '<div class="continue-progress">Page ' + (lastProg.page + 1) + ' of ' + lastProg.total + '</div></div>'
-      + '<div class="continue-resume">Resume ›</div></div>';
+      + '<div class="continue-resume">Resume âº</div></div>';
   }
   booksCatalog.forEach(book => {
     const prog = s.books[book.id];
@@ -582,7 +582,7 @@ function handleTouchEnd(e) { touchEndX = e.changedTouches[0].screenX; if (touchE
 function renderSavedQuotesList() {
   const container = document.getElementById('saved-quotes-container'); container.innerHTML = '';
   const savedItems = baseCards.filter(item => savedIds.includes(item.id));
-  if (savedItems.length === 0) { container.innerHTML = `<div style="text-align:center; padding:1.5rem; border:1px dashed rgba(255,255,255,0.05); border-radius:8px; color:var(--text-muted); font-size:0.75rem;">No starred items yet. Tap the star icon (★) at the bottom right of any card in your Quotes tab!</div>`; return; }
+  if (savedItems.length === 0) { container.innerHTML = `<div style="text-align:center; padding:1.5rem; border:1px dashed rgba(255,255,255,0.05); border-radius:8px; color:var(--text-muted); font-size:0.75rem;">No starred items yet. Tap the star icon (â) at the bottom right of any card in your Quotes tab!</div>`; return; }
   savedItems.forEach(item => {
     const itemCard = document.createElement('div'); itemCard.className = 'saved-quote-card';
     const cardStyle = getCategoryStyleClass(item.category); let borderAccent = 'var(--accent-gold)';
@@ -631,10 +631,10 @@ function resetToStreamFeed() { activeFilter = 'all'; document.querySelectorAll('
 function scrollToPacerCard() { if (currentTab !== 'stream') switchTab('stream'); setFilter('all'); setTimeout(() => { const pacerCard = document.querySelector('.pacer-card-root'); if (pacerCard) pacerCard.scrollIntoView({ behavior: 'smooth' }); }, 150); }
 
 /* ==========================================================================
-   10. SOUND SHIELD — local forest-rain ambience (audio/haven-ambient.mp3)
+   10. SOUND SHIELD â local forest-rain ambience (audio/haven-ambient.mp3)
    Replaces the old procedural rain generator. One reusable <audio> element,
    looped, routed through a Web Audio gain node for premium fade in/out
-   (plain playback fallback). Starts only on user tap — iOS autoplay safe.
+   (plain playback fallback). Starts only on user tap â iOS autoplay safe.
    ========================================================================== */
 let shieldAudio = null, shieldCtx = null, shieldGain = null;
 
@@ -691,7 +691,7 @@ function stopSoundShield(quiet) {
 function toggleSoundShield() { if (isShieldPlaying) stopSoundShield(); else startSoundShield(); }
 
 /* ==========================================================================
-   11. BREATHING PACER — with rolling haptics + cycle XP
+   11. BREATHING PACER â with rolling haptics + cycle XP
    ========================================================================== */
 function toggleBreathingEngine() {
   const box = document.getElementById('pacer-box-target'); const label = document.getElementById('pacer-label'); const pacerBtn = document.getElementById('pacer-shortcut');
@@ -746,13 +746,13 @@ function setupDailyChallenge() {
   if (savedDate !== today || isNaN(index)) { index = Math.floor(Math.random() * microChallenges.length); localStorage.setItem('havenscroll_challenge_index', index); localStorage.setItem('havenscroll_challenge_date', today); localStorage.removeItem('havenscroll_challenge_completed'); }
   document.getElementById('challenge-display').innerText = microChallenges[index];
   const isCompleted = localStorage.getItem('havenscroll_challenge_completed') === 'true'; const btn = document.getElementById('challenge-btn');
-  if (isCompleted) { btn.classList.add('completed'); btn.innerText = "Completed ✓"; } else { btn.classList.remove('completed'); btn.innerText = "Complete Task"; }
+  if (isCompleted) { btn.classList.add('completed'); btn.innerText = "Completed â"; } else { btn.classList.remove('completed'); btn.innerText = "Complete Task"; }
 }
 
 function completeDailyChallenge() {
   const isCompleted = localStorage.getItem('havenscroll_challenge_completed') === 'true'; const btn = document.getElementById('challenge-btn');
   if (!isCompleted) {
-    localStorage.setItem('havenscroll_challenge_completed', 'true'); btn.classList.add('completed'); btn.innerText = "Completed ✓"; showToast("Micro-challenge completed! Proud of you."); triggerHaptic('heavy');
+    localStorage.setItem('havenscroll_challenge_completed', 'true'); btn.classList.add('completed'); btn.innerText = "Completed â"; showToast("Micro-challenge completed! Proud of you."); triggerHaptic('heavy');
     stats.tasksDone++; awardXP('task');
   }
   else { localStorage.removeItem('havenscroll_challenge_completed'); btn.classList.remove('completed'); btn.innerText = "Complete Task"; showToast("Progress reset"); triggerHaptic('tick'); }
@@ -760,14 +760,14 @@ function completeDailyChallenge() {
 
 function renderLetters() {
   const container = document.getElementById('letters-container'); container.innerHTML = '';
-  omerLetters.forEach(letter => { const item = document.createElement('div'); item.className = 'letter-item'; item.onclick = () => openLetter(letter.id); item.innerHTML = `<span class="letter-title">✉️ ${letter.title}</span><span class="letter-meta">${letter.date}</span>`; container.appendChild(item); });
+  omerLetters.forEach(letter => { const item = document.createElement('div'); item.className = 'letter-item'; item.onclick = () => openLetter(letter.id); item.innerHTML = `<span class="letter-title">âï¸ ${letter.title}</span><span class="letter-meta">${letter.date}</span>`; container.appendChild(item); });
 }
 
 function openLetter(id) { const letter = omerLetters.find(l => l.id === id); if (!letter) return; document.getElementById('letter-text-box').innerText = letter.text; document.getElementById('letter-modal').style.display = 'flex'; triggerHaptic('heavy'); stats.lettersOpened++; awardXP('letter'); }
 function closeLetter() { document.getElementById('letter-modal').style.display = 'none'; triggerHaptic('tick'); }
 
 /* ==========================================================================
-   13. TACTILE WORRY STONE — canvas ripples + continuous soft haptics (Pillar 3)
+   13. TACTILE WORRY STONE â canvas ripples + continuous soft haptics (Pillar 3)
    ========================================================================== */
 let stoneCanvas = null, stoneCtx = null, stoneRipples = [], stoneRafId = null, lastStoneHaptic = 0, stoneInited = false, stoneSessionCounted = false;
 
@@ -845,21 +845,21 @@ function renderPodcasts() {
             <div class="ep-meta">${ep.duration}</div>
           </div>
           <div class="ep-actions">
-            <button class="ep-btn" onclick="playAudioTrack('${ep.url}','${safeTitle}','${safeShow}','${safeImg}')" title="Play">▶</button>
-            <button class="ep-btn" onclick="downloadPodcast('${ep.url}','${safeTitle}')" title="Share / Save">↓</button>
+            <button class="ep-btn" onclick="playAudioTrack('${ep.url}','${safeTitle}','${safeShow}','${safeImg}')" title="Play">â¶</button>
+            <button class="ep-btn" onclick="downloadPodcast('${ep.url}','${safeTitle}')" title="Share / Save">â</button>
           </div>
         </div>`;
     }).join('');
     showDiv.innerHTML = `
       <div class="podcast-show-header" onclick="this.parentElement.classList.toggle('open'); triggerHaptic('tick');">
         <div class="podcast-thumb">
-          ${show.image ? `<img src="${show.image}" alt="" onerror="this.parentElement.innerHTML='🎙️'">` : '🎙️'}
+          ${show.image ? `<img src="${show.image}" alt="" onerror="this.parentElement.innerHTML='ðï¸'">` : 'ðï¸'}
         </div>
         <div class="podcast-info">
           <div class="podcast-title">${show.title}</div>
           <div class="podcast-author">${show.author}</div>
         </div>
-        <span style="color:var(--text-muted); font-size:0.75rem; flex-shrink:0; margin-left:0.5rem;">▾</span>
+        <span style="color:var(--text-muted); font-size:0.75rem; flex-shrink:0; margin-left:0.5rem;">â¾</span>
       </div>
       <div class="podcast-episodes">${epHtml}</div>`;
     container.appendChild(showDiv);
@@ -899,9 +899,9 @@ nativeAudio.addEventListener('timeupdate', () => {
   currentTimeEl.textContent = formatTime(nativeAudio.currentTime);
 });
 nativeAudio.addEventListener('loadedmetadata', () => { durationEl.textContent = formatTime(nativeAudio.duration); });
-nativeAudio.addEventListener('ended', () => { playBtn.innerHTML = '▶'; scrubber.value = 0; updateScrubberBackground(0); currentTimeEl.textContent = '0:00'; });
-nativeAudio.addEventListener('play', () => { playBtn.innerHTML = '<span style="letter-spacing:-1px">❚❚</span>'; });
-nativeAudio.addEventListener('pause', () => { playBtn.innerHTML = '▶'; });
+nativeAudio.addEventListener('ended', () => { playBtn.innerHTML = 'â¶'; scrubber.value = 0; updateScrubberBackground(0); currentTimeEl.textContent = '0:00'; });
+nativeAudio.addEventListener('play', () => { playBtn.innerHTML = '<span style="letter-spacing:-1px">ââ</span>'; });
+nativeAudio.addEventListener('pause', () => { playBtn.innerHTML = 'â¶'; });
 
 function onScrubberInput(value) {
   isScrubbing = true;
@@ -922,10 +922,10 @@ function cyclePlaybackSpeed() {
   currentSpeedIndex = (currentSpeedIndex + 1) % SPEED_STEPS.length;
   const speed = SPEED_STEPS[currentSpeedIndex];
   nativeAudio.playbackRate = speed;
-  speedBtn.textContent = speed === 1 ? '1×' : `${speed}×`;
+  speedBtn.textContent = speed === 1 ? '1Ã' : `${speed}Ã`;
   speedBtn.style.color = speed === 1 ? '' : 'var(--accent-gold)';
   speedBtn.style.borderColor = speed === 1 ? '' : 'var(--accent-gold)';
-  showToast(`Speed: ${speed}×`);
+  showToast(`Speed: ${speed}Ã`);
   triggerHaptic('tick');
 }
 function playAudioTrack(url, title, author, image) {
@@ -934,13 +934,13 @@ function playAudioTrack(url, title, author, image) {
   const thumb = document.querySelector('#global-audio-player .player-thumb');
   if (thumb) {
     thumb.innerHTML = image
-      ? `<img src="${image}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;" onerror="this.parentElement.innerHTML='🎙️'">`
-      : '🎙️';
+      ? `<img src="${image}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;" onerror="this.parentElement.innerHTML='ðï¸'">`
+      : 'ðï¸';
   }
   scrubber.value = 0; updateScrubberBackground(0);
   currentTimeEl.textContent = '0:00'; durationEl.textContent = '0:00';
   currentSpeedIndex = 0; nativeAudio.playbackRate = 1;
-  speedBtn.textContent = '1×'; speedBtn.style.color = ''; speedBtn.style.borderColor = '';
+  speedBtn.textContent = '1Ã'; speedBtn.style.color = ''; speedBtn.style.borderColor = '';
   nativeAudio.src = url;
   nativeAudio.play();
   globalPlayer.style.display = 'flex';
@@ -954,7 +954,7 @@ async function downloadPodcast(url, title) {
   const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
   if (isIOS) {
     if (navigator.share) {
-      try { await navigator.share({ title: title || 'Podcast Episode', url: url }); showToast("Share sheet opened ✓"); }
+      try { await navigator.share({ title: title || 'Podcast Episode', url: url }); showToast("Share sheet opened â"); }
       catch (e) { if (e.name !== 'AbortError') { window.open(url, '_blank'); showToast("Tap & hold the audio to save"); } }
     } else { window.open(url, '_blank'); showToast("Hold the audio to save to Files"); }
     return;
@@ -969,8 +969,8 @@ async function downloadPodcast(url, title) {
     a.download = (title || 'episode').replace(/[^a-z0-9 ]/gi, '_') + '.mp3';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-    showToast("Download saved ✓");
-  } catch (e) { window.open(url, '_blank'); showToast("Opened — save manually if needed"); }
+    showToast("Download saved â");
+  } catch (e) { window.open(url, '_blank'); showToast("Opened â save manually if needed"); }
   triggerHaptic('heavy');
 }
 
@@ -1016,7 +1016,7 @@ function activateStealthMode() { document.getElementById('stealth-overlay').styl
 function handleStealthScreenTap(event) { const triggerElement = document.getElementById('stealth-exit-trigger'); if (event.target === triggerElement || triggerElement.contains(event.target)) { document.getElementById('stealth-overlay').style.display = 'none'; triggerHaptic('heavy'); showToast("Sanctuary restored"); } }
 
 /* ==========================================================================
-   16. INTERSECTION OBSERVER — feed paging + lazy video play/pause
+   16. INTERSECTION OBSERVER â feed paging + lazy video play/pause
    ========================================================================== */
 function setupIntersectionObserver() {
   if (observer) observer.disconnect();
@@ -1081,14 +1081,14 @@ function registerAndWatchSW() {
 }
 
 /* ==========================================================================
-   19. SAME SKY — Moon phase + parallactic angle + location buttons
+   19. SAME SKY â Moon phase + parallactic angle + location buttons
    Pure offline. No GPS. No external libraries. Julian date math only.
    Parallactic angle: how the terminator tilts per observer latitude.
    ========================================================================== */
 
-const SAME_SKY_TRANSITION_DATE = new Date(2026, 5, 21); // June 21 → Norway
+const SAME_SKY_TRANSITION_DATE = new Date(2026, 5, 21); // June 21 â Norway
 
-// Hardcoded coordinates (private — city names never shown in app)
+// Hardcoded coordinates (private â city names never shown in app)
 const _SKY_LOCS_PRE  = { a: { lat: 43.485, lng: 43.604, name: 'Russia' },
                           b: { lat: 57.307, lng: 13.537, name: 'Sweden' } };
 const _SKY_LOCS_POST = { a: { lat: 59.913, lng: 10.752, name: 'Norway' },
@@ -1132,7 +1132,7 @@ function getMoonPhase(date) {
   return { phase, illum, name, age, jd };
 }
 
-// Simplified lunar RA/Dec (~1° accuracy) — Meeus Ch.47 abridged
+// Simplified lunar RA/Dec (~1Â° accuracy) â Meeus Ch.47 abridged
 function _getMoonRaDec(jd) {
   const D2R = Math.PI / 180;
   const T  = (jd - 2451545.0) / 36525;
@@ -1207,7 +1207,7 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
   }
   c.restore();
 
-  /* 2. Phase shadow — fully opaque so photo can't bleed through */
+  /* 2. Phase shadow â fully opaque so photo can't bleed through */
   if (phase < 0.49 || phase > 0.51) {
     var cos_a = Math.cos(phase * 2 * PI);
     c.save();
@@ -1216,11 +1216,12 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
     c.beginPath();
     if (phase < 0.5) {
       c.arc(cx, cy, r, 1.5*PI, 0.5*PI, true);
-      if (cos_a >= 0) { c.ellipse(cx, cy, cos_a*r, r, 0, 0.5*PI, 1.5*PI, false); }
-      else             { c.ellipse(cx, cy, -cos_a*r, r, 0, 0.5*PI, 1.5*PI, true); }
+      if (cos_a >= 0) { c.ellipse(cx, cy, cos_a*r, r, 0, 0.5*PI, 1.5*PI, true); }
+      else             { c.ellipse(cx, cy, -cos_a*r, r, 0, 0.5*PI, 1.5*PI, false); }
     } else {
       c.arc(cx, cy, r, 1.5*PI, 0.5*PI, false);
-      c.ellipse(cx, cy, Math.abs(cos_a)*r, r, 0, 0.5*PI, 1.5*PI, true);
+      if (cos_a >= 0) { c.ellipse(cx, cy, cos_a*r, r, 0, 0.5*PI, 1.5*PI, false); }
+      else             { c.ellipse(cx, cy, -cos_a*r, r, 0, 0.5*PI, 1.5*PI, true); }
     }
     c.closePath(); c.fill();
     c.restore();
@@ -1295,7 +1296,7 @@ function initSameSky() {
   const angle0 = _getParallacticAngle(locs.a.lat, locs.a.lng, result.jd);
   renderMoonCanvas(canvas, result.phase, angle0);
 
-  // Load photo — silently re-render when ready
+  // Load photo â silently re-render when ready
   const img = new Image();
   img.onload = function() {
     _moonPhoto = img;
