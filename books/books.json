@@ -7,7 +7,7 @@
       "author": "Saheeh International",
       "type": "quran",
       "txt": "./books/Quran.txt",
-      "cover": ""
+      "cover": "./books/Quran.png"
     },
     {
       "id": "lawful-prohibited",
