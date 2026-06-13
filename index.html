@@ -67,7 +67,19 @@
         <button class="filter-pill" data-filter="sanctuary" onclick="setFilter('sanctuary')">✦ Sanctuary</button>
         <button class="filter-pill" data-filter="neuro" onclick="setFilter('neuro')">≈ Neuro-Sync</button>
         <button class="filter-pill" data-filter="satire" onclick="setFilter('satire')">❖ Dry Satire</button>
+        <button class="filter-pill author-toggle-btn" id="author-toggle-btn" onclick="toggleAuthorPanel()">👤 Authors</button>
       </div>
+      <div id="author-badge-row" class="author-badge-row" style="display:none">
+        <span style="font-size:0.7rem;color:var(--text-muted)">Author:</span>
+        <span class="author-badge-name"></span>
+        <button class="author-badge-clear" onclick="clearAuthorFilter()">✕</button>
+      </div>
+    </div>
+
+    <!-- AUTHOR FILTER PANEL -->
+    <div id="author-panel" class="author-panel">
+      <input type="search" id="author-search" class="author-search-input" placeholder="Search author…" oninput="renderAuthorList(this.value)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <div id="author-list" class="author-list"></div>
     </div>
 
     <!-- ENDLESS STREAM CONTAINER -->

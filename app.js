@@ -242,7 +242,7 @@ function runSplashSequence() {
    6. CORE STATE & HELPERS
    ========================================================================== */
 let savedIds = JSON.parse(localStorage.getItem('texttube_saved_ids')) || [];
-let currentTab = 'stream'; let activeFilter = 'all'; let observer; let activeIndex = 0;
+let currentTab = 'stream'; let activeFilter = 'all'; let activeAuthor = null; let observer; let activeIndex = 0;
 let activeStreamCards = []; let pacerIntervalId = null;
 let isShieldPlaying = false; let ambientAutoStarted = false;
 let activeVibe = null; let groundingIndex = 0;
@@ -279,6 +279,7 @@ function renderFeed(appendMore = false) {
   const container = document.getElementById('feed-container');
   if (!appendMore) { killPacerEngine(); container.innerHTML = ''; activeStreamCards = []; }
   let pool = baseCards.filter(item => {
+    if (activeAuthor && item.author !== activeAuthor) return false;
     if (activeVibe) {
       if (activeVibe === 'overwhelmed') return item.category === 'Inner Sanctuary' || item.category === 'Neuro-Sync';
       if (activeVibe === 'restless') return item.category === 'Neuro-Sync' || item.isPacer;
@@ -628,6 +629,53 @@ function setFilter(filter) {
 }
 
 function resetToStreamFeed() { activeFilter = 'all'; document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === 'all')); switchTab('stream'); }
+
+/* ---------- Author search / filter ---------- */
+function toggleAuthorPanel() {
+  const panel = document.getElementById('author-panel');
+  const isOpen = panel.classList.toggle('author-panel--open');
+  if (isOpen) { renderAuthorList(document.getElementById('author-search').value || ''); }
+}
+
+function renderAuthorList(query) {
+  const q = query.toLowerCase();
+  const authors = [...new Set(
+    baseCards.filter(function(c) { return !c.isPacer && c.author; }).map(function(c) { return c.author; })
+  )].sort();
+  const filtered = q ? authors.filter(function(a) { return a.toLowerCase().includes(q); }) : authors;
+  document.getElementById('author-list').innerHTML = filtered.map(function(a) {
+    return '<button class="author-pill' + (a === activeAuthor ? ' author-pill--active' : '') +
+           '" onclick="setAuthorFilter(\'' + a.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\')">' + a + '</button>';
+  }).join('');
+}
+
+function setAuthorFilter(author) {
+  activeAuthor = (activeAuthor === author) ? null : author;
+  document.getElementById('author-panel').classList.remove('author-panel--open');
+  _updateAuthorBadge();
+  renderFeed();
+}
+
+function clearAuthorFilter() {
+  activeAuthor = null;
+  _updateAuthorBadge();
+  renderFeed();
+}
+
+function _updateAuthorBadge() {
+  const row = document.getElementById('author-badge-row');
+  const btn = document.getElementById('author-toggle-btn');
+  if (!row) return;
+  if (activeAuthor) {
+    row.style.display = 'flex';
+    row.querySelector('.author-badge-name').textContent = activeAuthor;
+    if (btn) btn.classList.add('author-toggle-btn--active');
+  } else {
+    row.style.display = 'none';
+    if (btn) btn.classList.remove('author-toggle-btn--active');
+  }
+}
+
 function scrollToPacerCard() { if (currentTab !== 'stream') switchTab('stream'); setFilter('all'); setTimeout(() => { const pacerCard = document.querySelector('.pacer-card-root'); if (pacerCard) pacerCard.scrollIntoView({ behavior: 'smooth' }); }, 150); }
 
 /* ==========================================================================
