@@ -1183,10 +1183,6 @@ function renderMoonCanvas(canvas, phase, rotAngle) {
   if (_moonPhoto) {
     const ps = r * 1.15;
     c.drawImage(_moonPhoto, cx-ps, cy-ps, ps*2, ps*2);
-    const haloMask = c.createRadialGradient(cx, cy, r*0.68, cx, cy, r);
-    haloMask.addColorStop(0, 'rgba(10,14,23,0)');
-    haloMask.addColorStop(1, 'rgba(10,14,23,1)');
-    c.fillStyle = haloMask; c.fillRect(cx-r, cy-r, r*2, r*2);
   } else {
     var grad = c.createRadialGradient(cx-r*0.18, cy-r*0.2, r*0.04, cx, cy, r);
     grad.addColorStop(0,    '#F5EDCC');
