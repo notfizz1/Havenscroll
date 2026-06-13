@@ -410,6 +410,90 @@ async function loadBooksCatalog() {
 
 function escapeHTML(str) { return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
+/* ==========================================================================
+   QURAN PAGINATOR — handles surah|verse|text pipe-delimited format
+   ========================================================================== */
+const SURAH_NAMES = [
+  '',
+  'Al-Fatihah','Al-Baqarah','Ali\'Imran','An-Nisa\'','Al-Ma\'idah',
+  'Al-An\'am','Al-A\'raf','Al-Anfal','At-Tawbah','Yunus',
+  'Hud','Yusuf','Ar-Ra\'d','Ibrahim','Al-Hijr',
+  'An-Nahl','Al-Isra\'','Al-Kahf','Maryam','Ta-Ha',
+  'Al-Anbiya\'','Al-Hajj','Al-Mu\'minun','An-Nur','Al-Furqan',
+  'Ash-Shu\'ara\'','An-Naml','Al-Qasas','Al-\'Ankabut','Ar-Rum',
+  'Luqman','As-Sajdah','Al-Ahzab','Saba\'','Fatir',
+  'Ya-Sin','As-Saffat','Sad','Az-Zumar','Ghafir',
+  'Fussilat','Ash-Shura','Az-Zukhruf','Ad-Dukhan','Al-Jathiyah',
+  'Al-Ahqaf','Muhammad','Al-Fath','Al-Hujurat','Qaf',
+  'Adh-Dhariyat','At-Tur','An-Najm','Al-Qamar','Ar-Rahman',
+  'Al-Waqi\'ah','Al-Hadid','Al-Mujadila','Al-Hashr','Al-Mumtahanah',
+  'As-Saf','Al-Jumu\'ah','Al-Munafiqun','At-Taghabun','At-Talaq',
+  'At-Tahrim','Al-Mulk','Al-Qalam','Al-Haqqah','Al-Ma\'arij',
+  'Nuh','Al-Jinn','Al-Muzzammil','Al-Muddaththir','Al-Qiyamah',
+  'Al-Insan','Al-Mursalat','An-Naba\'','An-Nazi\'at','\'Abasa',
+  'At-Takwir','Al-Infitar','Al-Mutaffifin','Al-Inshiqaq','Al-Buruj',
+  'At-Tariq','Al-A\'la','Al-Ghashiyah','Al-Fajr','Al-Balad',
+  'Ash-Shams','Al-Layl','Ad-Duha','Ash-Sharh','At-Tin',
+  'Al-\'Alaq','Al-Qadr','Al-Bayyinah','Az-Zalzalah','Al-\'Adiyat',
+  'Al-Qari\'ah','At-Takathur','Al-\'Asr','Al-Humazah','Al-Fil',
+  'Quraysh','Al-Ma\'un','Al-Kawthar','Al-Kafirun','An-Nasr',
+  'Al-Masad','Al-Ikhlas','Al-Falaq','An-Nas'
+];
+
+function paginateQuranText(raw, book) {
+  var surahs = {};
+  raw.trim().split('\n').forEach(function(line) {
+    var parts = line.split('|');
+    if (parts.length < 3) return;
+    var s = parts[0].trim(), v = parts[1].trim(), t = parts.slice(2).join('|').trim();
+    if (!surahs[s]) surahs[s] = [];
+    surahs[s].push({ v: v, t: t });
+  });
+
+  var PAGE_BUDGET = 620;
+  var pages = [];
+
+  Object.keys(surahs).sort(function(a,b){ return parseInt(a)-parseInt(b); }).forEach(function(sNum) {
+    var verses = surahs[sNum];
+    var name = SURAH_NAMES[parseInt(sNum)] || ('Surah ' + sNum);
+    var buf = '', size = 0;
+
+    var flush = function() {
+      if (buf) { pages.push('<div class="txt-page">' + buf + '</div>'); buf = ''; size = 0; }
+    };
+
+    // Surah header always starts fresh
+    flush();
+    buf += '<div class="quran-surah-head"><span class="quran-surah-num">Surah ' + sNum + '</span><h3 class="quran-surah-title">' + escapeHTML(name) + '</h3>';
+    if (sNum !== '9') {
+      buf += '<p class="quran-bismillah">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>';
+      buf += '<p class="quran-bismillah-en">In the name of Allah, the Most Gracious, the Most Merciful</p>';
+    }
+    buf += '</div>';
+    size = 80;
+
+    verses.forEach(function(vObj) {
+      var html = '<p class="quran-verse"><span class="quran-vnum">' + sNum + ':' + vObj.v + '</span> ' + escapeHTML(vObj.t) + '</p>';
+      if (size > 0 && size + vObj.t.length > PAGE_BUDGET) flush();
+      buf += html; size += vObj.t.length;
+    });
+    flush();
+  });
+
+  var coverPage = '<div style="text-align:center; margin-top:2rem; padding:1rem;">'
+    + '<div style="font-size:0.72rem; color:var(--accent-gold); letter-spacing:0.2em; text-transform:uppercase; margin-bottom:1.5rem;">Oasis Library</div>'
+    + '<h2 style="font-family:var(--font-serif); font-size:1.9rem; line-height:1.35; margin-bottom:0.5rem; color:#FFF;">The Qur\'an</h2>'
+    + '<p style="font-size:0.8rem; color:var(--accent-gold); letter-spacing:0.08em; margin-bottom:0.5rem;">القرآن الكريم</p>'
+    + '<div style="width:40px; height:1px; background:var(--accent-gold); margin:1.5rem auto;"></div>'
+    + '<p style="font-size:0.82rem; color:var(--text-muted); font-style:italic; margin-bottom:0.25rem;">English Meanings and Notes by</p>'
+    + '<p style="font-weight:700; color:var(--text-primary); letter-spacing:0.05em;">SAHEEH INTERNATIONAL</p>'
+    + '<p style="font-size:0.7rem; color:var(--text-muted); margin-top:1.5rem;">114 Surahs · 6236 Verses</p>'
+    + '<div style="margin-top:3rem; font-size:0.72rem; color:var(--text-muted); animation: heartbeat 2s infinite;">Tap the right margin to start reading →</div>'
+    + '</div>';
+  pages.unshift(coverPage);
+  return pages;
+}
+
 /* Convert a raw .txt into sanitized, phone-comfortable pages */
 function paginateText(raw, book) {
   let text = raw.replace(/\r\n/g, '\n');
@@ -495,7 +579,8 @@ async function openBook(id) {
       try {
         const res = await fetch(book.txt);
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        bookTextCache[id] = paginateText(await res.text(), book);
+        const raw = await res.text();
+        bookTextCache[id] = book.type === 'quran' ? paginateQuranText(raw, book) : paginateText(raw, book);
       } catch (e) { showToast('Book could not load'); return; }
     }
   }
