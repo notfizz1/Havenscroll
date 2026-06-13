@@ -1081,33 +1081,43 @@ function registerAndWatchSW() {
 }
 
 /* ==========================================================================
-   19. SAME SKY — Moon phase calculator + canvas renderer
+   19. SAME SKY — Moon phase + parallactic angle + location buttons
    Pure offline. No GPS. No external libraries. Julian date math only.
-   Reference new moon: Jan 6 2000 18:14 UTC (JD 2451550.1)
-   Synodic period: 29.53058867 days
+   Parallactic angle: how the terminator tilts per observer latitude.
    ========================================================================== */
 
-const SAME_SKY_TRANSITION_DATE = new Date(2026, 5, 21); // June 21, 2026
+const SAME_SKY_TRANSITION_DATE = new Date(2026, 5, 21); // June 21 → Norway
 
-function getSkyLocation() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const transition = new Date(SAME_SKY_TRANSITION_DATE);
-  transition.setHours(0, 0, 0, 0);
-  return today >= transition ? 'Norway' : 'Russia';
+// Hardcoded coordinates (private — city names never shown in app)
+const _SKY_LOCS_PRE  = { a: { lat: 43.485, lng: 43.604, name: 'Russia' },
+                          b: { lat: 57.307, lng: 13.537, name: 'Sweden' } };
+const _SKY_LOCS_POST = { a: { lat: 59.913, lng: 10.752, name: 'Norway' },
+                          b: { lat: 57.307, lng: 13.537, name: 'Sweden' } };
+
+let _sameSkyActiveLoc = 'a'; // default: Danna's location
+let _sameSkyJD        = null;
+let _sameSkyPhase     = null;
+let _moonPhoto        = null; // HTMLImageElement once ./assets/moon-photo.jpg loads
+
+function _getSkyLocs() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const t = new Date(SAME_SKY_TRANSITION_DATE); t.setHours(0,0,0,0);
+  return today >= t ? _SKY_LOCS_POST : _SKY_LOCS_PRE;
+}
+
+function _computeJD(date) {
+  const y = date.getUTCFullYear(), m = date.getUTCMonth() + 1, d = date.getUTCDate();
+  const A = Math.floor((14 - m) / 12);
+  const Y = y + 4800 - A, M2 = m + 12 * A - 3;
+  const jdn = d + Math.floor((153*M2+2)/5) + 365*Y + Math.floor(Y/4)
+            - Math.floor(Y/100) + Math.floor(Y/400) - 32045;
+  return jdn - 0.5 + (date.getUTCHours() + date.getUTCMinutes()/60) / 24;
 }
 
 function getMoonPhase(date) {
-  const JD_EPOCH  = 2451550.1;
-  const SYNODIC   = 29.53058867;
-  const y = date.getUTCFullYear(), m = date.getUTCMonth() + 1, d = date.getUTCDate();
-  const A = Math.floor((14 - m) / 12);
-  const Y = y + 4800 - A;
-  const M = m + 12 * A - 3;
-  const jdn = d + Math.floor((153 * M + 2) / 5) + 365 * Y + Math.floor(Y / 4)
-            - Math.floor(Y / 100) + Math.floor(Y / 400) - 32045;
-  const jd = jdn - 0.5 + (date.getUTCHours() + date.getUTCMinutes() / 60) / 24;
-  const age = ((jd - JD_EPOCH) % SYNODIC + SYNODIC) % SYNODIC;
+  const JD_EPOCH = 2451550.1, SYNODIC = 29.53058867;
+  const jd    = _computeJD(date);
+  const age   = ((jd - JD_EPOCH) % SYNODIC + SYNODIC) % SYNODIC;
   const phase = age / SYNODIC;
   const illum = Math.round((0.5 - 0.5 * Math.cos(phase * 2 * Math.PI)) * 100);
   let name;
@@ -1119,117 +1129,183 @@ function getMoonPhase(date) {
   else if (phase < 0.75)  name = 'Waning Gibbous';
   else if (phase < 0.775) name = 'Last Quarter';
   else                    name = 'Waning Crescent';
-  return { phase, illum, name, age };
+  return { phase, illum, name, age, jd };
 }
 
-function renderMoonCanvas(canvas, phase) {
+// Simplified lunar RA/Dec (~1° accuracy) — Meeus Ch.47 abridged
+function _getMoonRaDec(jd) {
+  const D2R = Math.PI / 180;
+  const T  = (jd - 2451545.0) / 36525;
+  const L0 = 218.3164477 + 481267.88123421 * T;
+  const Ms = 357.5291092 +  35999.0502909  * T;
+  const M1 = 134.9633964 + 477198.8675055  * T;
+  const Dv = 297.8501921 + 445267.1114034  * T;
+  const F  =  93.2720950 + 483202.0175233  * T;
+  const dL = 6.289*Math.sin(M1*D2R) + 1.274*Math.sin((2*Dv-M1)*D2R)
+           + 0.658*Math.sin(2*Dv*D2R) - 0.186*Math.sin(Ms*D2R)
+           - 0.059*Math.sin((2*Dv-2*M1)*D2R) - 0.057*Math.sin((2*Dv-Ms-M1)*D2R)
+           + 0.053*Math.sin((2*Dv+M1)*D2R);
+  const dB = 5.128*Math.sin(F*D2R) + 0.281*Math.sin((M1+F)*D2R)
+           - 0.281*Math.sin((M1-F)*D2R) - 0.173*Math.sin((2*Dv-F)*D2R);
+  const lam = (L0 + dL) * D2R;
+  const bet = dB * D2R;
+  const eps = 23.4393 * D2R;
+  const ra  = Math.atan2(Math.sin(lam)*Math.cos(eps) - Math.tan(bet)*Math.sin(eps), Math.cos(lam));
+  const dec = Math.asin(Math.sin(bet)*Math.cos(eps) + Math.cos(bet)*Math.sin(eps)*Math.sin(lam));
+  return { ra, dec };
+}
+
+// q = atan2(sin H, tan phi * cos dec - sin dec * cos H)
+function _getParallacticAngle(lat_deg, lng_deg, jd) {
+  const D2R = Math.PI / 180;
+  const { ra, dec } = _getMoonRaDec(jd);
+  const gmst = ((280.46061837 + 360.98564736629*(jd-2451545.0)) % 360 + 360) % 360 * D2R;
+  const H   = gmst + lng_deg * D2R - ra;
+  const phi = lat_deg * D2R;
+  return Math.atan2(Math.sin(H), Math.tan(phi)*Math.cos(dec) - Math.sin(dec)*Math.cos(H));
+}
+
+function renderMoonCanvas(canvas, phase, rotAngle) {
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const cx = W / 2, cy = H / 2;
-  const r = Math.min(W, H) * 0.44;
+  const W = canvas.width, Hc = canvas.height;
+  const cx = W/2, cy = Hc/2;
+  const r  = Math.min(W, Hc) * 0.44;
   const PI = Math.PI;
-  ctx.clearRect(0, 0, W, H);
-  const grad = ctx.createRadialGradient(cx - r * 0.18, cy - r * 0.2, r * 0.04, cx, cy, r);
-  grad.addColorStop(0,    '#F5EDCC');
-  grad.addColorStop(0.28, '#D4B86A');
-  grad.addColorStop(0.62, '#9A7B42');
-  grad.addColorStop(0.86, '#6B5530');
-  grad.addColorStop(1,    '#3A2E1A');
+
+  ctx.clearRect(0, 0, W, Hc);
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rotAngle || 0);
+  ctx.translate(-cx, -cy);
+
+  /* -- 1. Clip to disc -- */
   ctx.save();
   ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, 2 * PI);
-  ctx.fillStyle = grad;
-  ctx.fill();
-  ctx.restore();
-  const craters = [
-    { dx: -0.30, dy: -0.40, dr: 0.13 },
-    { dx:  0.32, dy: -0.15, dr: 0.085 },
-    { dx: -0.08, dy:  0.32, dr: 0.17 },
-    { dx:  0.50, dy:  0.12, dr: 0.072 },
-    { dx: -0.48, dy:  0.18, dr: 0.09 },
-    { dx:  0.14, dy:  0.52, dr: 0.105 },
-    { dx: -0.18, dy: -0.10, dr: 0.052 },
-    { dx:  0.22, dy: -0.52, dr: 0.08 },
-  ];
-  craters.forEach(({ dx, dy, dr }) => {
-    if (Math.sqrt(dx * dx + dy * dy) + dr > 0.92) return;
-    const ix = cx + dx * r, iy = cy + dy * r, ir = dr * r;
-    const cg = ctx.createRadialGradient(ix - ir * 0.2, iy - ir * 0.2, 0, ix, iy, ir);
-    cg.addColorStop(0,   'rgba(45,30,12,0.50)');
-    cg.addColorStop(0.7, 'rgba(25,18,8,0.32)');
-    cg.addColorStop(1,   'rgba(255,235,150,0.10)');
-    ctx.save();
+  ctx.arc(cx, cy, r, 0, 2*PI);
+  ctx.clip();
+
+  /* -- 2. Surface: real photo if loaded, else canvas gradient -- */
+  if (_moonPhoto) {
+    ctx.drawImage(_moonPhoto, cx-r, cy-r, r*2, r*2);
+  } else {
+    const grad = ctx.createRadialGradient(cx-r*0.18, cy-r*0.2, r*0.04, cx, cy, r);
+    grad.addColorStop(0,    '#F5EDCC');
+    grad.addColorStop(0.28, '#D4B86A');
+    grad.addColorStop(0.62, '#9A7B42');
+    grad.addColorStop(0.86, '#6B5530');
+    grad.addColorStop(1,    '#3A2E1A');
     ctx.beginPath();
-    ctx.arc(ix, iy, ir, 0, 2 * PI);
-    ctx.fillStyle = cg;
+    ctx.arc(cx, cy, r, 0, 2*PI);
+    ctx.fillStyle = grad;
     ctx.fill();
-    ctx.restore();
-  });
+    [ {dx:-0.30,dy:-0.40,dr:0.13}, {dx: 0.32,dy:-0.15,dr:0.085},
+      {dx:-0.08,dy: 0.32,dr:0.17}, {dx: 0.50,dy: 0.12,dr:0.072},
+      {dx:-0.48,dy: 0.18,dr:0.09}, {dx: 0.14,dy: 0.52,dr:0.105},
+      {dx:-0.18,dy:-0.10,dr:0.052},{dx: 0.22,dy:-0.52,dr:0.08 }
+    ].forEach(function(c) {
+      if (Math.sqrt(c.dx*c.dx+c.dy*c.dy)+c.dr > 0.92) return;
+      var ix=cx+c.dx*r, iy=cy+c.dy*r, ir=c.dr*r;
+      var cg=ctx.createRadialGradient(ix-ir*0.2,iy-ir*0.2,0,ix,iy,ir);
+      cg.addColorStop(0,'rgba(45,30,12,0.50)');
+      cg.addColorStop(0.7,'rgba(25,18,8,0.32)');
+      cg.addColorStop(1,'rgba(255,235,150,0.10)');
+      ctx.beginPath(); ctx.arc(ix,iy,ir,0,2*PI); ctx.fillStyle=cg; ctx.fill();
+    });
+  }
+  ctx.restore(); // end clip
+
+  /* -- 3. Phase shadow -- */
   if (phase < 0.49 || phase > 0.51) {
-    const angle = phase * 2 * PI;
-    const cos_a = Math.cos(angle);
+    const cos_a = Math.cos(phase * 2 * PI);
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, 2 * PI);
-    ctx.clip();
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,2*PI); ctx.clip();
     ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = 'rgba(10, 14, 23, 0.93)';
+    ctx.fillStyle = 'rgba(10,14,23,0.93)';
     ctx.beginPath();
     if (phase < 0.5) {
-      ctx.arc(cx, cy, r, 1.5 * PI, 0.5 * PI, true);
-      if (cos_a >= 0) { ctx.ellipse(cx, cy, cos_a * r, r, 0, 0.5 * PI, 1.5 * PI, false); }
-      else            { ctx.ellipse(cx, cy, -cos_a * r, r, 0, 0.5 * PI, 1.5 * PI, true); }
+      ctx.arc(cx,cy,r,1.5*PI,0.5*PI,true);
+      cos_a >= 0
+        ? ctx.ellipse(cx,cy,cos_a*r,r,0,0.5*PI,1.5*PI,false)
+        : ctx.ellipse(cx,cy,-cos_a*r,r,0,0.5*PI,1.5*PI,true);
     } else {
-      ctx.arc(cx, cy, r, 1.5 * PI, 0.5 * PI, false);
-      ctx.ellipse(cx, cy, Math.abs(cos_a) * r, r, 0, 0.5 * PI, 1.5 * PI, true);
+      ctx.arc(cx,cy,r,1.5*PI,0.5*PI,false);
+      ctx.ellipse(cx,cy,Math.abs(cos_a)*r,r,0,0.5*PI,1.5*PI,true);
     }
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
+    ctx.closePath(); ctx.fill(); ctx.restore();
   }
-  if (phase > 0.04 && phase < 0.96 && !(phase > 0.46 && phase < 0.54)) {
+
+  /* -- 4. Earthshine -- */
+  if (phase>0.04 && phase<0.96 && !(phase>0.46 && phase<0.54)) {
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, 2 * PI);
-    ctx.clip();
-    const esCx = phase < 0.5 ? cx - r * 0.28 : cx + r * 0.28;
-    const esCy = cy + r * 0.08;
-    const esG = ctx.createRadialGradient(esCx, esCy, 0, esCx, esCy, r * 0.85);
-    esG.addColorStop(0,   'rgba(70, 115, 180, 0.13)');
-    esG.addColorStop(0.5, 'rgba(50,  95, 160, 0.06)');
-    esG.addColorStop(1,   'rgba(35,  75, 140, 0.00)');
-    ctx.fillStyle = esG;
-    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
-    ctx.restore();
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,2*PI); ctx.clip();
+    const esCx = phase<0.5 ? cx-r*0.28 : cx+r*0.28;
+    const esG  = ctx.createRadialGradient(esCx,cy+r*0.08,0,esCx,cy+r*0.08,r*0.85);
+    esG.addColorStop(0,  'rgba(70,115,180,0.13)');
+    esG.addColorStop(0.5,'rgba(50,95,160,0.06)');
+    esG.addColorStop(1,  'rgba(35,75,140,0.00)');
+    ctx.fillStyle=esG; ctx.fillRect(cx-r,cy-r,r*2,r*2); ctx.restore();
   }
-  const limb = ctx.createRadialGradient(cx, cy, r * 0.86, cx, cy, r);
-  limb.addColorStop(0, 'rgba(0,0,0,0)');
-  limb.addColorStop(1, 'rgba(0,0,0,0.32)');
+
+  /* -- 5. Limb darkening -- */
+  const limb = ctx.createRadialGradient(cx,cy,r*0.86,cx,cy,r);
+  limb.addColorStop(0,'rgba(0,0,0,0)');
+  limb.addColorStop(1,'rgba(0,0,0,0.32)');
   ctx.save();
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, 2 * PI);
-  ctx.fillStyle = limb;
-  ctx.fill();
-  ctx.restore();
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,2*PI); ctx.fillStyle=limb; ctx.fill(); ctx.restore();
+
+  ctx.restore(); // end parallactic rotation
+}
+
+// Called by onclick="switchSkyView('a')" / "switchSkyView('b')"
+function switchSkyView(locKey) {
+  if (_sameSkyPhase === null || _sameSkyJD === null) return;
+  _sameSkyActiveLoc = locKey;
+  const loc = _getSkyLocs()[locKey];
+  const angle = _getParallacticAngle(loc.lat, loc.lng, _sameSkyJD);
+  const canvas = document.getElementById('moon-canvas');
+  if (canvas) renderMoonCanvas(canvas, _sameSkyPhase, angle);
+  ['a','b'].forEach(function(k) {
+    const btn = document.getElementById('btn-sky-' + k);
+    if (btn) btn.classList.toggle('active', k === locKey);
+  });
 }
 
 function initSameSky() {
   const canvas  = document.getElementById('moon-canvas');
   const nameEl  = document.getElementById('moon-phase-name');
   const illumEl = document.getElementById('moon-illum-pct');
-  const locEl   = document.getElementById('moon-locations');
   if (!canvas) return;
-  const { phase, illum, name } = getMoonPhase(new Date());
-  renderMoonCanvas(canvas, phase);
-  if (nameEl)  nameEl.textContent  = name;
-  if (illumEl) illumEl.textContent = illum + '% illuminated';
-  if (locEl) {
-    const location = getSkyLocation();
-    locEl.innerHTML =
-      '<span class="same-sky-loc">' + location + '</span>' +
-      '<span class="same-sky-dot" aria-hidden="true"></span>' +
-      '<span class="same-sky-loc same-sky-loc-b">Sweden</span>';
-  }
+
+  const result = getMoonPhase(new Date());
+  _sameSkyPhase = result.phase;
+  _sameSkyJD    = result.jd;
+
+  if (nameEl)  nameEl.textContent  = result.name;
+  if (illumEl) illumEl.textContent = result.illum + '% illuminated';
+
+  // Set button labels to current location names
+  const locs = _getSkyLocs();
+  const btnA = document.getElementById('btn-sky-a');
+  const btnB = document.getElementById('btn-sky-b');
+  if (btnA) { btnA.textContent = locs.a.name; btnA.classList.add('active'); }
+  if (btnB) { btnB.textContent = locs.b.name; }
+
+  // Render with Danna's parallactic angle by default
+  const angle0 = _getParallacticAngle(locs.a.lat, locs.a.lng, result.jd);
+  renderMoonCanvas(canvas, result.phase, angle0);
+
+  // Load photo — silently re-render when ready
+  const img = new Image();
+  img.onload = function() {
+    _moonPhoto = img;
+    const activeLoc = _getSkyLocs()[_sameSkyActiveLoc];
+    const ang = _getParallacticAngle(activeLoc.lat, activeLoc.lng, _sameSkyJD);
+    const c = document.getElementById('moon-canvas');
+    if (c) renderMoonCanvas(c, _sameSkyPhase, ang);
+  };
+  img.onerror = function() { _moonPhoto = null; };
+  img.src = './assets/moon-photo.jpg';
 }
 
 /* ==========================================================================
