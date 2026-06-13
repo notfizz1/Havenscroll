@@ -1081,12 +1081,165 @@ function registerAndWatchSW() {
 }
 
 /* ==========================================================================
+   19. SAME SKY — Moon phase calculator + canvas renderer
+   Pure offline. No GPS. No external libraries. Julian date math only.
+   Reference new moon: Jan 6 2000 18:14 UTC (JD 2451550.1)
+   Synodic period: 29.53058867 days
+   ========================================================================== */
+
+const SAME_SKY_TRANSITION_DATE = new Date(2026, 5, 21); // June 21, 2026
+
+function getSkyLocation() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const transition = new Date(SAME_SKY_TRANSITION_DATE);
+  transition.setHours(0, 0, 0, 0);
+  return today >= transition ? 'Norway' : 'Russia';
+}
+
+function getMoonPhase(date) {
+  const JD_EPOCH  = 2451550.1;
+  const SYNODIC   = 29.53058867;
+  const y = date.getUTCFullYear(), m = date.getUTCMonth() + 1, d = date.getUTCDate();
+  const A = Math.floor((14 - m) / 12);
+  const Y = y + 4800 - A;
+  const M = m + 12 * A - 3;
+  const jdn = d + Math.floor((153 * M + 2) / 5) + 365 * Y + Math.floor(Y / 4)
+            - Math.floor(Y / 100) + Math.floor(Y / 400) - 32045;
+  const jd = jdn - 0.5 + (date.getUTCHours() + date.getUTCMinutes() / 60) / 24;
+  const age = ((jd - JD_EPOCH) % SYNODIC + SYNODIC) % SYNODIC;
+  const phase = age / SYNODIC;
+  const illum = Math.round((0.5 - 0.5 * Math.cos(phase * 2 * Math.PI)) * 100);
+  let name;
+  if      (phase < 0.025) name = 'New Moon';
+  else if (phase < 0.25)  name = 'Waxing Crescent';
+  else if (phase < 0.275) name = 'First Quarter';
+  else if (phase < 0.50)  name = 'Waxing Gibbous';
+  else if (phase < 0.525) name = 'Full Moon';
+  else if (phase < 0.75)  name = 'Waning Gibbous';
+  else if (phase < 0.775) name = 'Last Quarter';
+  else                    name = 'Waning Crescent';
+  return { phase, illum, name, age };
+}
+
+function renderMoonCanvas(canvas, phase) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const r = Math.min(W, H) * 0.44;
+  const PI = Math.PI;
+  ctx.clearRect(0, 0, W, H);
+  const grad = ctx.createRadialGradient(cx - r * 0.18, cy - r * 0.2, r * 0.04, cx, cy, r);
+  grad.addColorStop(0,    '#F5EDCC');
+  grad.addColorStop(0.28, '#D4B86A');
+  grad.addColorStop(0.62, '#9A7B42');
+  grad.addColorStop(0.86, '#6B5530');
+  grad.addColorStop(1,    '#3A2E1A');
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * PI);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.restore();
+  const craters = [
+    { dx: -0.30, dy: -0.40, dr: 0.13 },
+    { dx:  0.32, dy: -0.15, dr: 0.085 },
+    { dx: -0.08, dy:  0.32, dr: 0.17 },
+    { dx:  0.50, dy:  0.12, dr: 0.072 },
+    { dx: -0.48, dy:  0.18, dr: 0.09 },
+    { dx:  0.14, dy:  0.52, dr: 0.105 },
+    { dx: -0.18, dy: -0.10, dr: 0.052 },
+    { dx:  0.22, dy: -0.52, dr: 0.08 },
+  ];
+  craters.forEach(({ dx, dy, dr }) => {
+    if (Math.sqrt(dx * dx + dy * dy) + dr > 0.92) return;
+    const ix = cx + dx * r, iy = cy + dy * r, ir = dr * r;
+    const cg = ctx.createRadialGradient(ix - ir * 0.2, iy - ir * 0.2, 0, ix, iy, ir);
+    cg.addColorStop(0,   'rgba(45,30,12,0.50)');
+    cg.addColorStop(0.7, 'rgba(25,18,8,0.32)');
+    cg.addColorStop(1,   'rgba(255,235,150,0.10)');
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ix, iy, ir, 0, 2 * PI);
+    ctx.fillStyle = cg;
+    ctx.fill();
+    ctx.restore();
+  });
+  if (phase < 0.49 || phase > 0.51) {
+    const angle = phase * 2 * PI;
+    const cos_a = Math.cos(angle);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, 2 * PI);
+    ctx.clip();
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = 'rgba(10, 14, 23, 0.93)';
+    ctx.beginPath();
+    if (phase < 0.5) {
+      ctx.arc(cx, cy, r, 1.5 * PI, 0.5 * PI, true);
+      if (cos_a >= 0) { ctx.ellipse(cx, cy, cos_a * r, r, 0, 0.5 * PI, 1.5 * PI, false); }
+      else            { ctx.ellipse(cx, cy, -cos_a * r, r, 0, 0.5 * PI, 1.5 * PI, true); }
+    } else {
+      ctx.arc(cx, cy, r, 1.5 * PI, 0.5 * PI, false);
+      ctx.ellipse(cx, cy, Math.abs(cos_a) * r, r, 0, 0.5 * PI, 1.5 * PI, true);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  if (phase > 0.04 && phase < 0.96 && !(phase > 0.46 && phase < 0.54)) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, 2 * PI);
+    ctx.clip();
+    const esCx = phase < 0.5 ? cx - r * 0.28 : cx + r * 0.28;
+    const esCy = cy + r * 0.08;
+    const esG = ctx.createRadialGradient(esCx, esCy, 0, esCx, esCy, r * 0.85);
+    esG.addColorStop(0,   'rgba(70, 115, 180, 0.13)');
+    esG.addColorStop(0.5, 'rgba(50,  95, 160, 0.06)');
+    esG.addColorStop(1,   'rgba(35,  75, 140, 0.00)');
+    ctx.fillStyle = esG;
+    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    ctx.restore();
+  }
+  const limb = ctx.createRadialGradient(cx, cy, r * 0.86, cx, cy, r);
+  limb.addColorStop(0, 'rgba(0,0,0,0)');
+  limb.addColorStop(1, 'rgba(0,0,0,0.32)');
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * PI);
+  ctx.fillStyle = limb;
+  ctx.fill();
+  ctx.restore();
+}
+
+function initSameSky() {
+  const canvas  = document.getElementById('moon-canvas');
+  const nameEl  = document.getElementById('moon-phase-name');
+  const illumEl = document.getElementById('moon-illum-pct');
+  const locEl   = document.getElementById('moon-locations');
+  if (!canvas) return;
+  const { phase, illum, name } = getMoonPhase(new Date());
+  renderMoonCanvas(canvas, phase);
+  if (nameEl)  nameEl.textContent  = name;
+  if (illumEl) illumEl.textContent = illum + '% illuminated';
+  if (locEl) {
+    const location = getSkyLocation();
+    locEl.innerHTML =
+      '<span class="same-sky-loc">' + location + '</span>' +
+      '<span class="same-sky-dot" aria-hidden="true"></span>' +
+      '<span class="same-sky-loc same-sky-loc-b">Sweden</span>';
+  }
+}
+
+/* ==========================================================================
    18. BOOT SEQUENCE
    ========================================================================== */
 window.addEventListener('DOMContentLoaded', async () => {
   applyDaypartTheme();
   setInterval(applyDaypartTheme, 10 * 60 * 1000);  // re-check palette every 10 min
   setupIOSHapticBridge();
+  initSameSky();
   runSplashSequence();
   updateStreak();
   startTimeTracking();
@@ -1103,4 +1256,4 @@ window.addEventListener('DOMContentLoaded', async () => {
   setTimeout(checkForVersionUpdate, 3000);
   setInterval(checkForVersionUpdate, 5 * 60 * 1000);
 });
-/* HavenScroll v2.1.0 */
+/* HavenScroll v2.3.0 */
