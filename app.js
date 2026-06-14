@@ -1025,6 +1025,9 @@ function newSpirograph() {
 }
 
 /* ---------- Sculpt spirograph — drag finger to morph in real time ---------- */
+// All 4 pen colors drawn simultaneously with rotational offsets — like a real multi-pen spirograph
+const SCULPT_COLORS = ['#D4AF37', '#81C784', '#ffffff', '#F48FB1'];
+
 function sculptSpirograph(clientX, clientY) {
   if (stoneSpiroRafId) { cancelAnimationFrame(stoneSpiroRafId); stoneSpiroRafId = null; }
   if (!stoneCtx || !stoneCanvas) return;
@@ -1033,8 +1036,8 @@ function sculptSpirograph(clientX, clientY) {
   const xn = Math.max(0, Math.min(1, (clientX - rect.left)  / rect.width));
   const yn = Math.max(0, Math.min(1, (clientY - rect.top)   / rect.height));
   // X → petal count (3 .. 11), Y → openness (tight at bottom, bloomed at top)
-  const petals   = 3 + xn * 8;               // 3.0 .. 11.0
-  const openness = 0.35 + (1 - yn) * 0.60;   // 0.35 (tight) .. 0.95 (open)
+  const petals   = 3 + xn * 8;
+  const openness = 0.35 + (1 - yn) * 0.60;
   const hw   = Math.min(rect.width, rect.height) * 0.46;
   const unit = hw / 90;
   const R  = 90 * unit;
@@ -1046,17 +1049,21 @@ function sculptSpirograph(clientX, clientY) {
   const steps  = Math.ceil(T * 240);
   const dt     = totalT / steps;
   stoneCtx.clearRect(0, 0, rect.width, rect.height);
-  stoneCtx.beginPath();
-  stoneCtx.strokeStyle = stoneSpiroColor;
-  stoneCtx.lineWidth   = 1.3;
-  stoneCtx.globalAlpha = 0.70;
-  for (let i = 0; i <= steps; i++) {
-    const t = i * dt;
-    const x = cx + (R - r) * Math.cos(t) + d * Math.cos((R - r) / r * t);
-    const y = cy + (R - r) * Math.sin(t) - d * Math.sin((R - r) / r * t);
-    i === 0 ? stoneCtx.moveTo(x, y) : stoneCtx.lineTo(x, y);
-  }
-  stoneCtx.stroke();
+  // Draw each pen color with an evenly-spaced rotational offset within one petal
+  SCULPT_COLORS.forEach((color, idx) => {
+    const angleOffset = (idx / SCULPT_COLORS.length) * (2 * Math.PI / T);
+    stoneCtx.beginPath();
+    stoneCtx.strokeStyle = color;
+    stoneCtx.lineWidth   = 1.2;
+    stoneCtx.globalAlpha = 0.62;
+    for (let i = 0; i <= steps; i++) {
+      const t = i * dt + angleOffset;
+      const x = cx + (R - r) * Math.cos(t) + d * Math.cos((R - r) / r * t);
+      const y = cy + (R - r) * Math.sin(t) - d * Math.sin((R - r) / r * t);
+      i === 0 ? stoneCtx.moveTo(x, y) : stoneCtx.lineTo(x, y);
+    }
+    stoneCtx.stroke();
+  });
   stoneCtx.globalAlpha = 1;
   const now = performance.now();
   if (now - lastStoneHaptic > 80) { triggerHaptic('tick'); lastStoneHaptic = now; }
@@ -1068,6 +1075,8 @@ function toggleStoneMode(mode) {
   document.getElementById('stone-mode-spiro').classList.toggle('stone-mode-btn--active', mode === 'spiro');
   document.getElementById('stone-mode-sculpt').classList.toggle('stone-mode-btn--active', mode === 'sculpt');
   document.getElementById('stone-draw-tools').style.display = (mode !== 'ripple') ? 'flex' : 'none';
+  // In sculpt mode all 4 colors fire simultaneously — hide individual picker
+  document.querySelectorAll('.stone-color-btn').forEach(b => { b.style.display = (mode === 'sculpt') ? 'none' : ''; });
   // Update action button label contextually
   const actionBtn = document.querySelector('.stone-clear-btn');
   if (actionBtn) actionBtn.textContent = (mode === 'sculpt') ? '✕ Clear' : '↺ New Pattern';
