@@ -915,8 +915,6 @@ function closeLetter() { document.getElementById('letter-modal').style.display =
 let stoneCanvas = null, stoneCtx = null, stoneRipples = [], stoneRafId = null, lastStoneHaptic = 0, stoneInited = false, stoneSessionCounted = false;
 let stoneSpiroMode = false, stoneSpiroColor = '#D4AF37', stoneSpiroRafId = null;
 
-// Spirograph presets: { R, r, d } are in "design units" — scaled to canvas at draw time.
-// T = how many full revolutions of the rolling circle until the pattern closes.
 const SPIRO_PRESETS = [
   { R:90, r:30, d:28, T:3  },  // 3-petal classic
   { R:80, r:20, d:18, T:4  },  // 4-petal
@@ -951,7 +949,7 @@ function initWorryStone() {
     document.getElementById('worry-stone-wrap').classList.add('touched');
     if (!stoneSessionCounted) { stoneSessionCounted = true; stats.stoneSessions++; awardXP('stone'); setTimeout(() => stoneSessionCounted = false, 30000); }
     if (stoneSpiroMode) {
-      newSpirograph(); // tap canvas → new pattern
+      newSpirograph();
     } else {
       const r = stoneCanvas.getBoundingClientRect();
       const x = clientX - r.left, y = clientY - r.top;
@@ -963,7 +961,7 @@ function initWorryStone() {
   };
 
   const onMove = (clientX, clientY) => {
-    if (stoneSpiroMode) return; // spirograph is auto-animated, ignore drag
+    if (stoneSpiroMode) return;
     const r = stoneCanvas.getBoundingClientRect();
     const x = clientX - r.left, y = clientY - r.top;
     stoneRipples.push({ x, y, radius: 4, alpha: 0.5 });
@@ -988,13 +986,13 @@ function newSpirograph() {
 
   const p    = SPIRO_PRESETS[Math.floor(Math.random() * SPIRO_PRESETS.length)];
   const hw   = Math.min(rect.width, rect.height) * 0.46;
-  const unit = hw / 90; // 90 = max R in design units
+  const unit = hw / 90;
   const R = p.R * unit, r = p.r * unit, d = p.d * unit;
   const cx = rect.width / 2, cy = rect.height / 2;
   const totalT = 2 * Math.PI * p.T;
-  const steps  = Math.ceil(p.T * 200); // 200 pts per revolution → smooth
+  const steps  = Math.ceil(p.T * 200);
   const dt     = totalT / steps;
-  const framesTarget = 180; // ~3 s at 60 fps
+  const framesTarget = 180;
   const batchSize = Math.max(2, Math.ceil(steps / framesTarget));
   const color  = stoneSpiroColor;
   let t = 0, lastX = null, lastY = null;
@@ -1146,4 +1144,577 @@ nativeAudio.addEventListener('timeupdate', () => {
   updateScrubberBackground(pct);
   currentTimeEl.textContent = formatTime(nativeAudio.currentTime);
 });
-nativeAudio.addEventListener('loadedmetadata', () => { durationEl.textContent = 
+nativeAudio.addEventListener('loadedmetadata', () => { durationEl.textContent = formatTime(nativeAudio.duration); });
+nativeAudio.addEventListener('ended', () => { playBtn.innerHTML = '▶'; scrubber.value = 0; updateScrubberBackground(0); currentTimeEl.textContent = '0:00'; });
+nativeAudio.addEventListener('play', () => { playBtn.innerHTML = '<span style="letter-spacing:-1px">❚❚</span>'; });
+nativeAudio.addEventListener('pause', () => { playBtn.innerHTML = '▶'; });
+
+function onScrubberInput(value) {
+  isScrubbing = true;
+  const pct = parseFloat(value);
+  updateScrubberBackground(pct);
+  if (nativeAudio.duration) currentTimeEl.textContent = formatTime((pct / 100) * nativeAudio.duration);
+}
+function onScrubberChange(value) {
+  isScrubbing = false;
+  if (nativeAudio.duration) nativeAudio.currentTime = (parseFloat(value) / 100) * nativeAudio.duration;
+  triggerHaptic('tick');
+}
+function skipPodcast(seconds) {
+  nativeAudio.currentTime = Math.max(0, Math.min(nativeAudio.duration || 0, nativeAudio.currentTime + seconds));
+  triggerHaptic('tick');
+}
+function cyclePlaybackSpeed() {
+  currentSpeedIndex = (currentSpeedIndex + 1) % SPEED_STEPS.length;
+  const speed = SPEED_STEPS[currentSpeedIndex];
+  nativeAudio.playbackRate = speed;
+  speedBtn.textContent = speed === 1 ? '1×' : `${speed}×`;
+  speedBtn.style.color = speed === 1 ? '' : 'var(--accent-gold)';
+  speedBtn.style.borderColor = speed === 1 ? '' : 'var(--accent-gold)';
+  showToast(`Speed: ${speed}×`);
+  triggerHaptic('tick');
+}
+function playAudioTrack(url, title, author, image) {
+  document.getElementById('player-title').innerText = title;
+  document.getElementById('player-author').innerText = author;
+  const thumb = document.querySelector('#global-audio-player .player-thumb');
+  if (thumb) {
+    thumb.innerHTML = image
+      ? `<img src="${image}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;" onerror="this.parentElement.innerHTML='🎙️'">`
+      : '🎙️';
+  }
+  scrubber.value = 0; updateScrubberBackground(0);
+  currentTimeEl.textContent = '0:00'; durationEl.textContent = '0:00';
+  currentSpeedIndex = 0; nativeAudio.playbackRate = 1;
+  speedBtn.textContent = '1×'; speedBtn.style.color = ''; speedBtn.style.borderColor = '';
+  nativeAudio.src = url;
+  nativeAudio.play();
+  globalPlayer.style.display = 'flex';
+  triggerHaptic('heavy');
+}
+function togglePodcastPlay() { if (nativeAudio.paused) nativeAudio.play(); else nativeAudio.pause(); triggerHaptic('tick'); }
+function closePodcastPlayer() { nativeAudio.pause(); nativeAudio.src = ''; globalPlayer.style.display = 'none'; scrubber.value = 0; updateScrubberBackground(0); triggerHaptic('tick'); }
+
+async function downloadPodcast(url, title) {
+  triggerHaptic('wave');
+  const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
+  if (isIOS) {
+    if (navigator.share) {
+      try { await navigator.share({ title: title || 'Podcast Episode', url: url }); showToast("Share sheet opened ✓"); }
+      catch (e) { if (e.name !== 'AbortError') { window.open(url, '_blank'); showToast("Tap & hold the audio to save"); } }
+    } else { window.open(url, '_blank'); showToast("Hold the audio to save to Files"); }
+    return;
+  }
+  showToast("Downloading... this may take a moment");
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = (title || 'episode').replace(/[^a-z0-9 ]/gi, '_') + '.mp3';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    showToast("Download saved ✓");
+  } catch (e) { window.open(url, '_blank'); showToast("Opened — save manually if needed"); }
+  triggerHaptic('heavy');
+}
+
+/* ==========================================================================
+   15. AMBIENT STARFIELD & STEALTH MODE
+   ========================================================================== */
+async function toggleAmbientStarfield(activate) {
+  const overlay = document.getElementById('ambient-starfield-overlay'); isAmbientActive = activate;
+  if (activate) {
+    overlay.style.display = 'flex'; initStarfield(); triggerHaptic('heavy');
+    if (!isShieldPlaying) ambientAutoStarted = await startSoundShield(true);
+    else ambientAutoStarted = false;
+  } else {
+    overlay.style.display = 'none'; if (animationFrameId) cancelAnimationFrame(animationFrameId); stars = []; triggerHaptic('tick');
+    if (ambientAutoStarted) { stopSoundShield(true); ambientAutoStarted = false; }
+  }
+}
+function initStarfield() {
+  canvas = document.getElementById('starfield-canvas'); ctx = canvas.getContext('2d'); resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+  stars = []; const starCount = 120;
+  for (let i = 0; i < starCount; i++) { stars.push({ x: Math.random() * canvas.width - canvas.width / 2, y: Math.random() * canvas.height - canvas.height / 2, z: Math.random() * canvas.width, color: Math.random() > 0.3 ? '#81C784' : '#FFB74D' }); }
+  runStarfieldLoop();
+}
+function resizeCanvas() { if (!canvas) return; const rect = canvas.parentElement.getBoundingClientRect(); canvas.width = rect.width; canvas.height = rect.height; }
+function runStarfieldLoop() {
+  if (!isAmbientActive) return;
+  ctx.fillStyle = 'rgba(2, 4, 8, 0.25)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ambientPacerVal += 0.007 * ambientPacerDirection;
+  if (ambientPacerVal >= 1) { ambientPacerVal = 1; ambientPacerDirection = -1; } else if (ambientPacerVal <= 0.02) { ambientPacerVal = 0.02; ambientPacerDirection = 1; }
+  const label = document.getElementById('ambient-pacer-label');
+  if (ambientPacerDirection === 1) { label.innerText = "Breathe in deeply..."; label.style.color = "var(--accent-sage)"; } else { label.innerText = "Exhale slowly... Let go"; label.style.color = "var(--accent-indigo)"; }
+  const centerX = canvas.width / 2; const centerY = canvas.height / 2;
+  stars.forEach(star => {
+    star.z -= 1.5 + (ambientPacerVal * 6);
+    if (star.z <= 0) { star.z = canvas.width; star.x = Math.random() * canvas.width - canvas.width / 2; star.y = Math.random() * canvas.height - canvas.height / 2; }
+    const k = 128.0 / star.z; const px = star.x * k + centerX; const py = star.y * k + centerY;
+    if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) { const size = (1 - star.z / canvas.width) * (2 + ambientPacerVal * 4); ctx.beginPath(); ctx.arc(px, py, size, 0, Math.PI * 2); ctx.fillStyle = star.color; ctx.fill(); }
+  });
+  animationFrameId = requestAnimationFrame(runStarfieldLoop);
+}
+
+function activateStealthMode() { document.getElementById('stealth-overlay').style.display = 'flex'; killPacerEngine(); triggerHaptic('heavy'); }
+function handleStealthScreenTap(event) { const triggerElement = document.getElementById('stealth-exit-trigger'); if (event.target === triggerElement || triggerElement.contains(event.target)) { document.getElementById('stealth-overlay').style.display = 'none'; triggerHaptic('heavy'); showToast("Sanctuary restored"); } }
+
+/* ==========================================================================
+   16. INTERSECTION OBSERVER — feed paging + lazy video play/pause
+   ========================================================================== */
+function setupIntersectionObserver() {
+  if (observer) observer.disconnect();
+  const options = { root: document.getElementById('feed-container'), threshold: 0.5 };
+  observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const video = entry.target.querySelector('.card-bg-video');
+      if (entry.isIntersecting) {
+        const index = parseInt(entry.target.dataset.index, 10); activeIndex = index;
+        if (video) {
+          if (!video.src && video.dataset.src) video.src = video.dataset.src;
+          video.play().then(() => video.classList.add('video-live')).catch(() => {});
+        }
+        if (currentTab === 'stream' && index >= activeStreamCards.length - 3) renderFeed(true);
+      } else {
+        if (video && !video.paused) video.pause();
+        if (entry.target.classList.contains('pacer-card-root')) { killPacerEngine(); const label = document.getElementById('pacer-label'); if (label) { label.innerText = "Tap target circle to begin"; label.style.color = "var(--text-muted)"; } }
+      }
+    });
+  }, options);
+  document.querySelectorAll('.card').forEach(card => observer.observe(card));
+}
+
+/* ==========================================================================
+   17. SERVICE WORKER + VERSION-BASED UPDATE DETECTION
+   ========================================================================== */
+let pendingUpdateWorker = null;
+const CURRENT_VERSION_KEY = 'havenscroll_installed_version';
+
+function showUpdateBanner() { const banner = document.getElementById('update-banner'); if (banner) banner.style.display = 'flex'; }
+function dismissUpdateBanner() { const banner = document.getElementById('update-banner'); if (banner) banner.style.display = 'none'; }
+function applyUpdate() {
+  localStorage.removeItem(CURRENT_VERSION_KEY);
+  dismissUpdateBanner();
+  showToast("Updating Haven Scroll...");
+  if (pendingUpdateWorker) { pendingUpdateWorker.postMessage({ type: 'SKIP_WAITING' }); pendingUpdateWorker = null; }
+  setTimeout(() => window.location.reload(true), 800);
+}
+async function checkForVersionUpdate() {
+  try {
+    const res = await fetch('./version.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    const serverVersion = data.version;
+    const installedVersion = localStorage.getItem(CURRENT_VERSION_KEY);
+    if (!installedVersion) { localStorage.setItem(CURRENT_VERSION_KEY, serverVersion); return; }
+    if (serverVersion !== installedVersion) showUpdateBanner();
+  } catch (e) { /* offline - silently ignore */ }
+}
+function registerAndWatchSW() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    if (reg.waiting) { pendingUpdateWorker = reg.waiting; showUpdateBanner(); }
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      if (!newWorker) return;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) { pendingUpdateWorker = newWorker; showUpdateBanner(); }
+      });
+    });
+  }).catch(err => console.log('SW registration failed:', err));
+}
+
+/* ==========================================================================
+   19. SAME SKY — Moon phase + parallactic angle + location buttons
+   Pure offline. No GPS. No external libraries. Julian date math only.
+   Parallactic angle: how the terminator tilts per observer latitude.
+   ========================================================================== */
+
+const SAME_SKY_TRANSITION_DATE = new Date(2026, 5, 21); // June 21 → Norway
+
+// Hardcoded coordinates (private — city names never shown in app)
+const _SKY_LOCS_PRE  = { a: { lat: 43.485, lng: 43.604, name: 'Russia' },
+                          b: { lat: 57.307, lng: 13.537, name: 'Sweden' } };
+const _SKY_LOCS_POST = { a: { lat: 59.913, lng: 10.752, name: 'Norway' },
+                          b: { lat: 57.307, lng: 13.537, name: 'Sweden' } };
+
+let _sameSkyActiveLoc = 'a'; // default: Danna's location
+let _sameSkyJD        = null;
+let _sameSkyPhase     = null;
+
+function _getSkyLocs() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const t = new Date(SAME_SKY_TRANSITION_DATE); t.setHours(0,0,0,0);
+  return today >= t ? _SKY_LOCS_POST : _SKY_LOCS_PRE;
+}
+
+function _computeJD(date) {
+  const y = date.getUTCFullYear(), m = date.getUTCMonth() + 1, d = date.getUTCDate();
+  const A = Math.floor((14 - m) / 12);
+  const Y = y + 4800 - A, M2 = m + 12 * A - 3;
+  const jdn = d + Math.floor((153*M2+2)/5) + 365*Y + Math.floor(Y/4)
+            - Math.floor(Y/100) + Math.floor(Y/400) - 32045;
+  return jdn - 0.5 + (date.getUTCHours() + date.getUTCMinutes()/60) / 24;
+}
+
+function getMoonPhase(date) {
+  const JD_EPOCH = 2451550.1, SYNODIC = 29.53058867;
+  const jd    = _computeJD(date);
+  const age   = ((jd - JD_EPOCH) % SYNODIC + SYNODIC) % SYNODIC;
+  const phase = age / SYNODIC;
+  const illum = Math.round((0.5 - 0.5 * Math.cos(phase * 2 * Math.PI)) * 100);
+  let name;
+  if      (phase < 0.025) name = 'New Moon';
+  else if (phase < 0.25)  name = 'Waxing Crescent';
+  else if (phase < 0.275) name = 'First Quarter';
+  else if (phase < 0.50)  name = 'Waxing Gibbous';
+  else if (phase < 0.525) name = 'Full Moon';
+  else if (phase < 0.75)  name = 'Waning Gibbous';
+  else if (phase < 0.775) name = 'Last Quarter';
+  else                    name = 'Waning Crescent';
+  return { phase, illum, name, age, jd };
+}
+
+// Simplified lunar RA/Dec (~1° accuracy) — Meeus Ch.47 abridged
+function _getMoonRaDec(jd) {
+  const D2R = Math.PI / 180;
+  const T  = (jd - 2451545.0) / 36525;
+  const L0 = 218.3164477 + 481267.88123421 * T;
+  const Ms = 357.5291092 +  35999.0502909  * T;
+  const M1 = 134.9633964 + 477198.8675055  * T;
+  const Dv = 297.8501921 + 445267.1114034  * T;
+  const F  =  93.2720950 + 483202.0175233  * T;
+  const dL = 6.289*Math.sin(M1*D2R) + 1.274*Math.sin((2*Dv-M1)*D2R)
+           + 0.658*Math.sin(2*Dv*D2R) - 0.186*Math.sin(Ms*D2R)
+           - 0.059*Math.sin((2*Dv-2*M1)*D2R) - 0.057*Math.sin((2*Dv-Ms-M1)*D2R)
+           + 0.053*Math.sin((2*Dv+M1)*D2R);
+  const dB = 5.128*Math.sin(F*D2R) + 0.281*Math.sin((M1+F)*D2R)
+           - 0.281*Math.sin((M1-F)*D2R) - 0.173*Math.sin((2*Dv-F)*D2R);
+  const lam = (L0 + dL) * D2R;
+  const bet = dB * D2R;
+  const eps = 23.4393 * D2R;
+  const ra  = Math.atan2(Math.sin(lam)*Math.cos(eps) - Math.tan(bet)*Math.sin(eps), Math.cos(lam));
+  const dec = Math.asin(Math.sin(bet)*Math.cos(eps) + Math.cos(bet)*Math.sin(eps)*Math.sin(lam));
+  return { ra, dec };
+}
+
+// q = atan2(sin H, tan φ · cos δ − sin δ · cos H)
+function _getParallacticAngle(lat_deg, lng_deg, jd) {
+  const D2R = Math.PI / 180;
+  const { ra, dec } = _getMoonRaDec(jd);
+  const gmst = ((280.46061837 + 360.98564736629*(jd-2451545.0)) % 360 + 360) % 360 * D2R;
+  const H   = gmst + lng_deg * D2R - ra;
+  const phi = lat_deg * D2R;
+  return Math.atan2(Math.sin(H), Math.tan(phi)*Math.cos(dec) - Math.sin(dec)*Math.cos(H));
+}
+
+function renderMoonCanvas(canvas, phase, rotAngle) {
+  const W = canvas.width, Hc = canvas.height;
+  const cx = W/2, cy = Hc/2;
+  const r  = Math.min(W, Hc) * 0.44;
+  const PI = Math.PI;
+
+  // Render everything on an offscreen canvas first — no rotation, clean compositing.
+  // Then blit to main canvas with parallactic rotation. This avoids all composite quirks.
+  const oc = document.createElement('canvas');
+  oc.width = W; oc.height = Hc;
+  const c = oc.getContext('2d');
+
+  /* ── 1. Surface: canvas gradient moon ── */
+  c.save();
+  c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
+  const grad = c.createRadialGradient(cx-r*0.18, cy-r*0.2, r*0.04, cx, cy, r);
+  grad.addColorStop(0,    '#F5EDCC');
+  grad.addColorStop(0.28, '#D4B86A');
+  grad.addColorStop(0.62, '#9A7B42');
+  grad.addColorStop(0.86, '#6B5530');
+  grad.addColorStop(1,    '#3A2E1A');
+  c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.fillStyle = grad; c.fill();
+  [ {dx:-0.30,dy:-0.40,dr:0.13}, {dx: 0.32,dy:-0.15,dr:0.085},
+    {dx:-0.08,dy: 0.32,dr:0.17}, {dx: 0.50,dy: 0.12,dr:0.072},
+    {dx:-0.48,dy: 0.18,dr:0.09}, {dx: 0.14,dy: 0.52,dr:0.105},
+    {dx:-0.18,dy:-0.10,dr:0.052},{dx: 0.22,dy:-0.52,dr:0.08 }
+  ].forEach(function(p) {
+    if (Math.sqrt(p.dx*p.dx+p.dy*p.dy)+p.dr > 0.92) return;
+    var ix=cx+p.dx*r, iy=cy+p.dy*r, ir=p.dr*r;
+    var cg=c.createRadialGradient(ix-ir*0.2,iy-ir*0.2,0,ix,iy,ir);
+    cg.addColorStop(0,'rgba(45,30,12,0.50)');
+    cg.addColorStop(0.7,'rgba(25,18,8,0.32)');
+    cg.addColorStop(1,'rgba(255,235,150,0.10)');
+    c.beginPath(); c.arc(ix,iy,ir,0,2*PI); c.fillStyle=cg; c.fill();
+  });
+  c.restore();
+
+  /* ── 2. Phase shadow — fully opaque, clipped to disc ── */
+  if (phase < 0.49 || phase > 0.51) {
+    const cos_a = Math.cos(phase * 2 * PI);
+    c.save();
+    c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
+    c.fillStyle = 'rgb(10,14,23)';  // fully opaque — no bleed-through
+    c.beginPath();
+    if (phase < 0.5) {
+      // Waxing: shadow on LEFT
+      c.arc(cx, cy, r, 1.5*PI, 0.5*PI, true);  // CCW left arc: top→left→bottom
+      cos_a >= 0
+        ? c.ellipse(cx, cy, cos_a*r,  r, 0, 0.5*PI, 1.5*PI, true)   // crescent: RIGHT terminator (large shadow)
+        : c.ellipse(cx, cy, -cos_a*r, r, 0, 0.5*PI, 1.5*PI, false);  // gibbous:  LEFT terminator (thin shadow)
+    } else {
+      // Waning: shadow on RIGHT
+      c.arc(cx, cy, r, 1.5*PI, 0.5*PI, false); // CW right arc: top→right→bottom
+      cos_a >= 0
+        ? c.ellipse(cx, cy, cos_a*r,  r, 0, 0.5*PI, 1.5*PI, false)  // crescent: LEFT terminator (large shadow)
+        : c.ellipse(cx, cy, -cos_a*r, r, 0, 0.5*PI, 1.5*PI, true);   // gibbous:  RIGHT terminator (thin shadow)
+    }
+    c.closePath(); c.fill();
+    c.restore();
+  }
+
+  /* ── 3. Earthshine on dark limb ── */
+  if (phase>0.04 && phase<0.96 && !(phase>0.46 && phase<0.54)) {
+    c.save();
+    c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.clip();
+    const esCx = phase<0.5 ? cx-r*0.28 : cx+r*0.28;
+    const esG = c.createRadialGradient(esCx, cy+r*0.08, 0, esCx, cy+r*0.08, r*0.85);
+    esG.addColorStop(0,   'rgba(70,115,180,0.13)');
+    esG.addColorStop(0.5, 'rgba(50,95,160,0.06)');
+    esG.addColorStop(1,   'rgba(35,75,140,0.00)');
+    c.fillStyle = esG; c.fillRect(cx-r, cy-r, r*2, r*2);
+    c.restore();
+  }
+
+  /* ── 4. Limb darkening ── */
+  const limb = c.createRadialGradient(cx, cy, r*0.86, cx, cy, r);
+  limb.addColorStop(0, 'rgba(0,0,0,0)');
+  limb.addColorStop(1, 'rgba(0,0,0,0.32)');
+  c.save();
+  c.beginPath(); c.arc(cx, cy, r, 0, 2*PI); c.fillStyle = limb; c.fill();
+  c.restore();
+
+  /* ── 5. Copy to main canvas with parallactic rotation ── */
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, Hc);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rotAngle || 0);
+  ctx.translate(-cx, -cy);
+  ctx.drawImage(oc, 0, 0);
+  ctx.restore();
+}
+
+// Called by onclick="switchSkyView('a')" / "switchSkyView('b')"
+function switchSkyView(locKey) {
+  if (_sameSkyPhase === null || _sameSkyJD === null) return;
+  _sameSkyActiveLoc = locKey;
+  const loc = _getSkyLocs()[locKey];
+  const angle = _getParallacticAngle(loc.lat, loc.lng, _sameSkyJD);
+  const canvas = document.getElementById('moon-canvas');
+  if (canvas) renderMoonCanvas(canvas, _sameSkyPhase, angle);
+  ['a','b'].forEach(k => {
+    const btn = document.getElementById('btn-sky-' + k);
+    if (btn) btn.classList.toggle('active', k === locKey);
+  });
+}
+
+function initSameSky() {
+  const canvas  = document.getElementById('moon-canvas');
+  const nameEl  = document.getElementById('moon-phase-name');
+  const illumEl = document.getElementById('moon-illum-pct');
+  if (!canvas) return;
+
+  const { phase, illum, name, jd } = getMoonPhase(new Date());
+  _sameSkyPhase = phase;
+  _sameSkyJD    = jd;
+
+  if (nameEl)  nameEl.textContent  = name;
+  if (illumEl) illumEl.textContent = illum + '% illuminated';
+
+  // Set button labels to current location names
+  const locs = _getSkyLocs();
+  const btnA = document.getElementById('btn-sky-a');
+  const btnB = document.getElementById('btn-sky-b');
+  if (btnA) { btnA.textContent = locs.a.name; btnA.classList.add('active'); }
+  if (btnB) { btnB.textContent = locs.b.name; }
+
+  // Render with Danna's parallactic angle by default
+  const angle0 = _getParallacticAngle(locs.a.lat, locs.a.lng, jd);
+  renderMoonCanvas(canvas, phase, angle0);
+
+}
+
+/* ==========================================================================
+   18. PRAYER TIMES — MWL offline calculation, no GPS / API required
+   ========================================================================== */
+
+// Russia tab hidden on/after this date; auto-switch to Norway
+const PRAYER_HIDE_RUSSIA = new Date(2026, 5, 22); // June 22 2026
+
+const PRAYER_LOCS = {
+  russia: { lat: 43.49806, lng: 43.61889, tz: 3, label: 'Russia'  },
+  sweden: { lat: 57.3044,  lng: 13.5408,  tz: 2, label: 'Sweden'  },
+  norway: { lat: 59.91149, lng: 10.75793, tz: 2, label: 'Norway'  }
+};
+
+const PRAYER_QUOTES = [
+  { ref: 'Quran 20:14',  text: 'Establish prayer for My remembrance.'              },
+  { ref: 'Quran 13:28',  text: 'In the remembrance of Allah, hearts find comfort.' },
+  { ref: 'Quran 2:152',  text: 'Remember Me; I will remember you.'                 },
+  { ref: 'Quran 2:153',  text: 'Seek comfort in patience and prayer.'              },
+  { ref: 'Quran 11:114', text: 'Good deeds wipe away misdeeds.'                    },
+  { ref: 'Quran 23:1',   text: 'Successful indeed are the believers.'              },
+  { ref: 'Quran 14:40',  text: 'Our Lord, accept my prayer.'                       },
+  { ref: 'Quran 29:45',  text: 'The remembrance of Allah is greater.'              },
+  { ref: 'Quran 94:5',   text: 'With every hardship comes ease.'                   },
+  { ref: 'Quran 4:103',  text: 'Prayer is prescribed at appointed times.'          }
+];
+
+const PRAYER_NAMES  = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+const PRAYER_LABELS = { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' };
+const PRAYER_KEY    = 'haven_prayers_v1';
+// MWL angles — edit here to switch method
+const _PM = { fa: 18, is: 17 };
+
+let _prSelLoc = null;
+
+/* ── Solar position helpers ── */
+function _prSunPos(date) {
+  const doy = Math.round((date - new Date(date.getFullYear(), 0, 1)) / 86400000) + 1;
+  const B   = (360 / 365) * (doy - 81) * Math.PI / 180;
+  const dec = 23.45 * Math.sin(B);
+  const eqt = (9.87 * Math.sin(2*B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B)) / 60;
+  return { dec, eqt };
+}
+
+function _prHA(lat, dec, angle) {
+  const D2R = Math.PI / 180;
+  const cosH = (Math.sin(angle*D2R) - Math.sin(lat*D2R)*Math.sin(dec*D2R))
+             / (Math.cos(lat*D2R)*Math.cos(dec*D2R));
+  return (cosH >= 1 || cosH <= -1) ? null : Math.acos(cosH) / D2R;
+}
+
+function calcPrayerTimes(date, key) {
+  const L = PRAYER_LOCS[key], D2R = Math.PI / 180;
+  const { dec, eqt } = _prSunPos(date);
+  const noon    = 12 + L.tz - L.lng / 15 - eqt;
+  const srHA    = _prHA(L.lat, dec, -0.833);
+  const sunrise = noon - srHA / 15;
+  const sunset  = noon + srHA / 15;
+  const night   = (sunrise + 24) - sunset; // hours from tonight's sunset to tomorrow's sunrise
+
+  // Asr — standard (shadow factor 1)
+  const asrDeg = Math.atan(1 / (1 + Math.tan(Math.abs(L.lat - dec) * D2R))) / D2R;
+  const asrHA  = _prHA(L.lat, dec, asrDeg);
+  const asr    = noon + asrHA / 15;
+
+  // Fajr / Isha with AngleBased high-latitude fallback
+  const faHA = _prHA(L.lat, dec, -_PM.fa);
+  const isHA = _prHA(L.lat, dec, -_PM.is);
+  let fajr, isha, faEst = false, isEst = false;
+
+  if (faHA !== null) { fajr = noon - faHA / 15; }
+  else               { faEst = true;  fajr = sunrise - (_PM.fa / 60) * night; }
+  if (isHA !== null) { isha = noon + isHA / 15; }
+  else               { isEst = true;  isha = sunset  + (_PM.is / 60) * night; }
+
+  return { fajr, dhuhr: noon, asr, maghrib: sunset, isha, faEst, isEst };
+}
+
+/* ── Format / storage helpers ── */
+function _prFmt(h) {
+  const w = ((h % 24) + 24) % 24;
+  const hh = Math.floor(w);
+  const mm = Math.round((w - hh) * 60);
+  if (mm === 60) return `${String(hh + 1).padStart(2,'0')}:00`;
+  return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+}
+
+function _prDK(d) { return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
+function _prLoad() { try { return JSON.parse(localStorage.getItem(PRAYER_KEY)) || {}; } catch(e) { return {}; } }
+function _prSave(data) { try { localStorage.setItem(PRAYER_KEY, JSON.stringify(data)); } catch(e) {} }
+function _prRussiaHidden() { const t = new Date(); t.setHours(0,0,0,0); return t >= PRAYER_HIDE_RUSSIA; }
+
+/* ── Interaction ── */
+function prayerTick(locKey, name) {
+  const data = _prLoad(), dk = _prDK(new Date());
+  if (!data[dk]) data[dk] = {};
+  if (!data[dk][locKey]) data[dk][locKey] = {};
+  data[dk][locKey][name] = !data[dk][locKey][name];
+  _prSave(data);
+  // Sound placeholder — drop your mp3 here when ready:
+  // try { new Audio('./assets/prayer-tick.mp3').play(); } catch(e) {}
+  triggerHaptic('tick');
+  renderPrayerUI();
+}
+
+function setPrayerLoc(key) { _prSelLoc = key; renderPrayerUI(); }
+
+/* ── Render ── */
+function renderPrayerUI() {
+  const tabs   = document.getElementById('prayer-loc-tabs');
+  const dateRow  = document.getElementById('prayer-date-row');
+  const list     = document.getElementById('prayer-list');
+  const statsRow = document.getElementById('prayer-stats-row');
+  const quoteEl  = document.getElementById('prayer-quote');
+  if (!tabs) return;
+
+  // Auto-select first visible location
+  const russiaHidden = _prRussiaHidden();
+  const visible = Object.keys(PRAYER_LOCS).filter(k => !(k === 'russia' && russiaHidden));
+  if (!_prSelLoc || (russiaHidden && _prSelLoc === 'russia')) _prSelLoc = visible[0];
+
+  // Tabs
+  tabs.innerHTML = visible.map(k =>
+    `<button class="prayer-tab${k === _prSelLoc ? ' prayer-tab--active' : ''}" onclick="setPrayerLoc('${k}')">${PRAYER_LOCS[k].label}</button>`
+  ).join('');
+
+  // Date
+  const today = new Date();
+  if (dateRow) dateRow.textContent = today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Prayer times
+  const times  = calcPrayerTimes(today, _prSelLoc);
+  const saved  = _prLoad();
+  const dk     = _prDK(today);
+  const done   = (saved[dk] && saved[dk][_prSelLoc]) || {};
+
+  if (list) list.innerHTML = PRAYER_NAMES.map(name => {
+    const t   = times[name];
+    const est = (name === 'fajr' && times.faEst) || (name === 'isha' && times.isEst);
+    const cls = done[name] ? 'prayer-row prayer-row--done' : 'prayer-row';
+    return `<div class="${cls}" onclick="prayerTick('${_prSelLoc}','${name}')">
+      <span class="prayer-name">${PRAYER_LABELS[name]}</span>
+      <span class="prayer-time">${_prFmt(t)}${est ? '<sup> ~</sup>' : ''}</span>
+      <span class="prayer-tick">${done[name] ? '✓' : ''}</span>
+    </div>`;
+  }).join('');
+
+  // Stats
+  const doneCount = PRAYER_NAMES.filter(n => done[n]).length;
+  if (statsRow) statsRow.innerHTML = doneCount > 0
+    ? `<span class="prayer-stats-text">${doneCount} / 5 prayed today</span>` : '';
+
+  // Daily quote (rotates by day-of-month)
+  if (quoteEl) {
+    const q = PRAYER_QUOTES[today.getDate() % PRAYER_QUOTES.length];
+    quoteEl.innerHTML = q ? `<em>"${q.text}"</em> <small>${q.ref}</small>` : '';
+  }
+}
+
+/* ==========================================================================
+   20. BOOT — DOMContentLoaded
+   ========================================================================== */
+document.addEventListener('DOMContentLoaded', async () => {
+  applyDaypartTheme();
+  setInterval(applyDaypartTheme, 10 * 60 * 1000);
+  runSplashSequence();
+  setupIOSHapticBridge();
+  await loadContentData();
+  renderFeed();
+  renderPrayerUI();
+  initSameSky();
+  registerAndWatchSW();
+  setTimeout(checkForVersionUpdate, 3000);
+  setInterval(checkForVersionUpdate, 5 * 60 * 1000);
+});
+/* HavenScroll v2.5.0 */
