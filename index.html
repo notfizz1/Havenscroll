@@ -271,4 +271,52 @@
           <div class="player-title" id="player-title">Episode Title</div>
           <div class="player-sub" id="player-author">Podcast Name</div>
         </div>
-       
+        <button class="close-player-btn" onclick="closePodcastPlayer()">×</button>
+      </div>
+      <div class="player-progress-row">
+        <span class="player-time" id="player-current">0:00</span>
+        <input type="range" class="player-scrubber" id="player-scrubber" min="0" max="100" value="0" step="0.1" oninput="onScrubberInput(this.value)" onchange="onScrubberChange(this.value)">
+        <span class="player-time right" id="player-duration">0:00</span>
+      </div>
+      <div class="player-controls-row">
+        <button class="player-skip-btn" onclick="skipPodcast(-30)" title="Back 30s">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.95"></path></svg>
+          <span>30s</span>
+        </button>
+        <button class="player-skip-btn" onclick="skipPodcast(-10)" title="Back 10s">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-4.95"></path></svg>
+          <span>10s</span>
+        </button>
+        <button class="play-pause-btn" id="player-play-btn" onclick="togglePodcastPlay()">▶</button>
+        <button class="player-skip-btn" onclick="skipPodcast(10)" title="Forward 10s">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-.49-4.95"></path></svg>
+          <span>10s</span>
+        </button>
+        <button class="player-skip-btn" onclick="skipPodcast(30)" title="Forward 30s">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-.49-4.95"></path></svg>
+          <span>30s</span>
+        </button>
+        <button class="player-speed-btn" id="player-speed-btn" onclick="cyclePlaybackSpeed()" title="Playback speed">1×</button>
+      </div>
+    </div>
+
+    <!-- BOTTOM APP NAV BAR -->
+    <div id="bottom-nav">
+      <button class="tab-btn active" id="tab-stream" onclick="switchTab('stream')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        <span class="tab-label">✦ Quotes</span>
+      </button>
+      <button class="tab-btn" id="tab-books" onclick="switchTab('books')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span class="tab-label">📖 Books</span>
+      </button>
+      <button class="tab-btn" id="tab-oasis" onclick="switchTab('oasis')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+        <span class="tab-label">✦ Oasis</span>
+      </button>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
