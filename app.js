@@ -1052,21 +1052,19 @@ function sculptSpirograph(clientX, clientY) {
   const dt     = totalT / steps;
   const N      = SCULPT_COLORS.length;
   stoneCtx.clearRect(0, 0, rect.width, rect.height);
-  // Each pen is the same spirograph rotated evenly around 360° — gives distinct rainbow arms
+  // Each color paints its own slice of the path (1/N of total steps) — true rainbow pen effect
+  stoneCtx.lineWidth   = 1.8;
+  stoneCtx.globalAlpha = 1.0;
   SCULPT_COLORS.forEach((color, idx) => {
-    const rotAngle = (idx / N) * (2 * Math.PI);
-    const cosA = Math.cos(rotAngle), sinA = Math.sin(rotAngle);
+    const startI = Math.floor(idx / N * steps);
+    const endI   = Math.floor((idx + 1) / N * steps) + 1;
     stoneCtx.beginPath();
     stoneCtx.strokeStyle = color;
-    stoneCtx.lineWidth   = 1.4;
-    stoneCtx.globalAlpha = 0.88;
-    for (let i = 0; i <= steps; i++) {
+    for (let i = startI; i <= Math.min(endI, steps); i++) {
       const t = i * dt;
-      const rawX = (R - r) * Math.cos(t) + d * Math.cos((R - r) / r * t);
-      const rawY = (R - r) * Math.sin(t) - d * Math.sin((R - r) / r * t);
-      const x = cx + cosA * rawX - sinA * rawY;
-      const y = cy + sinA * rawX + cosA * rawY;
-      i === 0 ? stoneCtx.moveTo(x, y) : stoneCtx.lineTo(x, y);
+      const x = cx + (R - r) * Math.cos(t) + d * Math.cos((R - r) / r * t);
+      const y = cy + (R - r) * Math.sin(t) - d * Math.sin((R - r) / r * t);
+      i === startI ? stoneCtx.moveTo(x, y) : stoneCtx.lineTo(x, y);
     }
     stoneCtx.stroke();
   });
