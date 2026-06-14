@@ -178,11 +178,12 @@
       <div class="oasis-drawer" id="drawer-stone">
         <button class="drawer-trigger" onclick="toggleDrawer('drawer-stone')"><span>🪨 Worry Stone</span><span class="drawer-arrow">▶</span></button>
         <div class="drawer-content">
-          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">Rest your thumb on the stone and rub slowly. Fluid ripples and soft vibrations follow your touch — or switch to Spirograph to generate a meditative geometric pattern.</p>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">Rest your thumb on the stone and rub slowly. Choose Ripple for tactile waves, Spirograph for a random auto-drawn pattern, or Sculpt to drag and morph your own geometric shape in real time.</p>
           <!-- mode toggle -->
           <div class="stone-mode-row">
             <button class="stone-mode-btn stone-mode-btn--active" id="stone-mode-ripple" onclick="toggleStoneMode('ripple')">〜 Ripple</button>
             <button class="stone-mode-btn" id="stone-mode-spiro" onclick="toggleStoneMode('spiro')">✦ Spirograph</button>
+            <button class="stone-mode-btn" id="stone-mode-sculpt" onclick="toggleStoneMode('sculpt')">✎ Sculpt</button>
           </div>
           <!-- spirograph tools (hidden in ripple mode) -->
           <div class="stone-draw-tools" id="stone-draw-tools" style="display:none">
@@ -311,12 +312,4 @@
         <span class="tab-label">📖 Books</span>
       </button>
       <button class="tab-btn" id="tab-oasis" onclick="switchTab('oasis')">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
-        <span class="tab-label">✦ Oasis</span>
-      </button>
-    </div>
-  </div>
-
-  <script src="./app.js"></script>
-</body>
-</html>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></

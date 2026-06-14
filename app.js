@@ -913,7 +913,7 @@ function closeLetter() { document.getElementById('letter-modal').style.display =
    13. TACTILE WORRY STONE — canvas ripples + continuous soft haptics (Pillar 3)
    ========================================================================== */
 let stoneCanvas = null, stoneCtx = null, stoneRipples = [], stoneRafId = null, lastStoneHaptic = 0, stoneInited = false, stoneSessionCounted = false;
-let stoneSpiroMode = false, stoneSpiroColor = '#D4AF37', stoneSpiroRafId = null;
+let stoneMode = 'ripple', stoneSpiroColor = '#D4AF37', stoneSpiroRafId = null;
 
 const SPIRO_PRESETS = [
   { R:90, r:30, d:28, T:3  },  // 3-petal classic
@@ -948,8 +948,10 @@ function initWorryStone() {
   const onDown = (clientX, clientY) => {
     document.getElementById('worry-stone-wrap').classList.add('touched');
     if (!stoneSessionCounted) { stoneSessionCounted = true; stats.stoneSessions++; awardXP('stone'); setTimeout(() => stoneSessionCounted = false, 30000); }
-    if (stoneSpiroMode) {
+    if (stoneMode === 'spiro') {
       newSpirograph();
+    } else if (stoneMode === 'sculpt') {
+      sculptSpirograph(clientX, clientY);
     } else {
       const r = stoneCanvas.getBoundingClientRect();
       const x = clientX - r.left, y = clientY - r.top;
@@ -961,7 +963,8 @@ function initWorryStone() {
   };
 
   const onMove = (clientX, clientY) => {
-    if (stoneSpiroMode) return;
+    if (stoneMode === 'spiro') return;
+    if (stoneMode === 'sculpt') { sculptSpirograph(clientX, clientY); return; }
     const r = stoneCanvas.getBoundingClientRect();
     const x = clientX - r.left, y = clientY - r.top;
     stoneRipples.push({ x, y, radius: 4, alpha: 0.5 });
@@ -972,7 +975,7 @@ function initWorryStone() {
   };
 
   stoneCanvas.addEventListener('touchstart',  e => { const t = e.touches[0]; if (t) onDown(t.clientX, t.clientY); }, { passive: true });
-  stoneCanvas.addEventListener('touchmove',   e => { if (!stoneSpiroMode) { e.preventDefault(); const t = e.touches[0]; if (t) onMove(t.clientX, t.clientY); } }, { passive: false });
+  stoneCanvas.addEventListener('touchmove',   e => { if (stoneMode !== 'spiro') { e.preventDefault(); const t = e.touches[0]; if (t) onMove(t.clientX, t.clientY); } }, { passive: false });
   stoneCanvas.addEventListener('mousedown',   e => onDown(e.clientX, e.clientY));
   stoneCanvas.addEventListener('mousemove',   e => { if (e.buttons === 1) onMove(e.clientX, e.clientY); });
 }
@@ -1021,15 +1024,57 @@ function newSpirograph() {
   triggerHaptic('tick');
 }
 
+/* ---------- Sculpt spirograph — drag finger to morph in real time ---------- */
+function sculptSpirograph(clientX, clientY) {
+  if (stoneSpiroRafId) { cancelAnimationFrame(stoneSpiroRafId); stoneSpiroRafId = null; }
+  if (!stoneCtx || !stoneCanvas) return;
+  const rect = stoneCanvas.getBoundingClientRect();
+  // Normalize finger position to 0–1
+  const xn = Math.max(0, Math.min(1, (clientX - rect.left)  / rect.width));
+  const yn = Math.max(0, Math.min(1, (clientY - rect.top)   / rect.height));
+  // X → petal count (3 .. 11), Y → openness (tight at bottom, bloomed at top)
+  const petals   = 3 + xn * 8;               // 3.0 .. 11.0
+  const openness = 0.35 + (1 - yn) * 0.60;   // 0.35 (tight) .. 0.95 (open)
+  const hw   = Math.min(rect.width, rect.height) * 0.46;
+  const unit = hw / 90;
+  const R  = 90 * unit;
+  const r  = R / (petals + 1);
+  const d  = r * openness;
+  const cx = rect.width / 2, cy = rect.height / 2;
+  const T      = Math.ceil(petals);
+  const totalT = 2 * Math.PI * T;
+  const steps  = Math.ceil(T * 240);
+  const dt     = totalT / steps;
+  stoneCtx.clearRect(0, 0, rect.width, rect.height);
+  stoneCtx.beginPath();
+  stoneCtx.strokeStyle = stoneSpiroColor;
+  stoneCtx.lineWidth   = 1.3;
+  stoneCtx.globalAlpha = 0.70;
+  for (let i = 0; i <= steps; i++) {
+    const t = i * dt;
+    const x = cx + (R - r) * Math.cos(t) + d * Math.cos((R - r) / r * t);
+    const y = cy + (R - r) * Math.sin(t) - d * Math.sin((R - r) / r * t);
+    i === 0 ? stoneCtx.moveTo(x, y) : stoneCtx.lineTo(x, y);
+  }
+  stoneCtx.stroke();
+  stoneCtx.globalAlpha = 1;
+  const now = performance.now();
+  if (now - lastStoneHaptic > 80) { triggerHaptic('tick'); lastStoneHaptic = now; }
+}
+
 function toggleStoneMode(mode) {
-  stoneSpiroMode = mode === 'spiro';
-  document.getElementById('stone-mode-ripple').classList.toggle('stone-mode-btn--active', !stoneSpiroMode);
-  document.getElementById('stone-mode-spiro').classList.toggle('stone-mode-btn--active', stoneSpiroMode);
-  document.getElementById('stone-draw-tools').style.display = stoneSpiroMode ? 'flex' : 'none';
+  stoneMode = mode;
+  document.getElementById('stone-mode-ripple').classList.toggle('stone-mode-btn--active', mode === 'ripple');
+  document.getElementById('stone-mode-spiro').classList.toggle('stone-mode-btn--active', mode === 'spiro');
+  document.getElementById('stone-mode-sculpt').classList.toggle('stone-mode-btn--active', mode === 'sculpt');
+  document.getElementById('stone-draw-tools').style.display = (mode !== 'ripple') ? 'flex' : 'none';
+  // Update action button label contextually
+  const actionBtn = document.querySelector('.stone-clear-btn');
+  if (actionBtn) actionBtn.textContent = (mode === 'sculpt') ? '✕ Clear' : '↺ New Pattern';
   stoneRipples = [];
   if (stoneSpiroRafId) { cancelAnimationFrame(stoneSpiroRafId); stoneSpiroRafId = null; }
   if (stoneCtx) { const r = stoneCanvas.getBoundingClientRect(); stoneCtx.clearRect(0, 0, r.width, r.height); }
-  if (stoneSpiroMode) newSpirograph();
+  if (mode === 'spiro') newSpirograph();
   triggerHaptic('tick');
 }
 
@@ -1037,7 +1082,7 @@ function setStoneColor(color, btn) {
   stoneSpiroColor = color;
   document.querySelectorAll('.stone-color-btn').forEach(b => b.classList.remove('stone-color-btn--active'));
   btn.classList.add('stone-color-btn--active');
-  if (stoneSpiroMode) newSpirograph();
+  if (stoneMode === 'spiro') newSpirograph();
   triggerHaptic('tick');
 }
 
@@ -1662,22 +1707,15 @@ function renderPrayerUI() {
   const russiaHidden = _prRussiaHidden();
   const visible = Object.keys(PRAYER_LOCS).filter(k => !(k === 'russia' && russiaHidden));
   if (!_prSelLoc || (russiaHidden && _prSelLoc === 'russia')) _prSelLoc = visible[0];
-
-  // Tabs
   tabs.innerHTML = visible.map(k =>
     `<button class="prayer-tab${k === _prSelLoc ? ' prayer-tab--active' : ''}" onclick="setPrayerLoc('${k}')">${PRAYER_LOCS[k].label}</button>`
   ).join('');
-
-  // Date
   const today = new Date();
   if (dateRow) dateRow.textContent = today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-  // Prayer times
   const times  = calcPrayerTimes(today, _prSelLoc);
   const saved  = _prLoad();
   const dk     = _prDK(today);
   const done   = (saved[dk] && saved[dk][_prSelLoc]) || {};
-
   if (list) list.innerHTML = PRAYER_NAMES.map(name => {
     const t   = times[name];
     const est = (name === 'fajr' && times.faEst) || (name === 'isha' && times.isEst);
@@ -1685,25 +1723,18 @@ function renderPrayerUI() {
     return `<div class="${cls}" onclick="prayerTick('${_prSelLoc}','${name}')">
       <span class="prayer-name">${PRAYER_LABELS[name]}</span>
       <span class="prayer-time">${_prFmt(t)}${est ? '<sup> ~</sup>' : ''}</span>
-      <span class="prayer-tick">${done[name] ? '✓' : ''}</span>
+      <span class="prayer-tick">${done[name] ? '\u2713' : ''}</span>
     </div>`;
   }).join('');
-
-  // Stats
   const doneCount = PRAYER_NAMES.filter(n => done[n]).length;
   if (statsRow) statsRow.innerHTML = doneCount > 0
     ? `<span class="prayer-stats-text">${doneCount} / 5 prayed today</span>` : '';
-
-  // Daily quote (rotates by day-of-month)
   if (quoteEl) {
     const q = PRAYER_QUOTES[today.getDate() % PRAYER_QUOTES.length];
     quoteEl.innerHTML = q ? `<em>"${q.text}"</em> <small>${q.ref}</small>` : '';
   }
 }
 
-/* ==========================================================================
-   20. BOOT — DOMContentLoaded
-   ========================================================================== */
 document.addEventListener('DOMContentLoaded', async () => {
   applyDaypartTheme();
   setInterval(applyDaypartTheme, 10 * 60 * 1000);
