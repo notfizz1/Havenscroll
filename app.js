@@ -1025,17 +1025,19 @@ function newSpirograph() {
 }
 
 /* ---------- Sculpt spirograph — drag finger to morph in real time ---------- */
-// All 4 pen colors drawn simultaneously with rotational offsets — like a real multi-pen spirograph
-const SCULPT_COLORS = ['#D4AF37', '#81C784', '#ffffff', '#F48FB1'];
+// 12-color rainbow palette — each pen is a fully distinct hue, like a real rainbow spirograph
+const SCULPT_COLORS = [
+  '#FF2020', '#FF5500', '#FF9900', '#FFD700',
+  '#AAFF00', '#00DD55', '#00BBBB', '#0088FF',
+  '#3344FF', '#7700EE', '#CC00BB', '#FF0066'
+];
 
 function sculptSpirograph(clientX, clientY) {
   if (stoneSpiroRafId) { cancelAnimationFrame(stoneSpiroRafId); stoneSpiroRafId = null; }
   if (!stoneCtx || !stoneCanvas) return;
   const rect = stoneCanvas.getBoundingClientRect();
-  // Normalize finger position to 0–1
   const xn = Math.max(0, Math.min(1, (clientX - rect.left)  / rect.width));
   const yn = Math.max(0, Math.min(1, (clientY - rect.top)   / rect.height));
-  // X → petal count (3 .. 11), Y → openness (tight at bottom, bloomed at top)
   const petals   = 3 + xn * 8;
   const openness = 0.35 + (1 - yn) * 0.60;
   const hw   = Math.min(rect.width, rect.height) * 0.46;
@@ -1048,14 +1050,15 @@ function sculptSpirograph(clientX, clientY) {
   const totalT = 2 * Math.PI * T;
   const steps  = Math.ceil(T * 240);
   const dt     = totalT / steps;
+  const N      = SCULPT_COLORS.length;
   stoneCtx.clearRect(0, 0, rect.width, rect.height);
-  // Draw each pen color with an evenly-spaced rotational offset within one petal
+  // Each pen gets an equal slice of one full petal rotation, drawn at full opacity
   SCULPT_COLORS.forEach((color, idx) => {
-    const angleOffset = (idx / SCULPT_COLORS.length) * (2 * Math.PI / T);
+    const angleOffset = (idx / N) * (2 * Math.PI / T);
     stoneCtx.beginPath();
     stoneCtx.strokeStyle = color;
-    stoneCtx.lineWidth   = 1.2;
-    stoneCtx.globalAlpha = 0.62;
+    stoneCtx.lineWidth   = 1.1;
+    stoneCtx.globalAlpha = 0.85;
     for (let i = 0; i <= steps; i++) {
       const t = i * dt + angleOffset;
       const x = cx + (R - r) * Math.cos(t) + d * Math.cos((R - r) / r * t);
