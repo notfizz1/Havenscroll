@@ -1052,17 +1052,20 @@ function sculptSpirograph(clientX, clientY) {
   const dt     = totalT / steps;
   const N      = SCULPT_COLORS.length;
   stoneCtx.clearRect(0, 0, rect.width, rect.height);
-  // Each pen gets an equal slice of one full petal rotation, drawn at full opacity
+  // Each pen is the same spirograph rotated evenly around 360° — gives distinct rainbow arms
   SCULPT_COLORS.forEach((color, idx) => {
-    const angleOffset = (idx / N) * (2 * Math.PI / T);
+    const rotAngle = (idx / N) * (2 * Math.PI);
+    const cosA = Math.cos(rotAngle), sinA = Math.sin(rotAngle);
     stoneCtx.beginPath();
     stoneCtx.strokeStyle = color;
-    stoneCtx.lineWidth   = 1.1;
-    stoneCtx.globalAlpha = 0.85;
+    stoneCtx.lineWidth   = 1.4;
+    stoneCtx.globalAlpha = 0.88;
     for (let i = 0; i <= steps; i++) {
-      const t = i * dt + angleOffset;
-      const x = cx + (R - r) * Math.cos(t) + d * Math.cos((R - r) / r * t);
-      const y = cy + (R - r) * Math.sin(t) - d * Math.sin((R - r) / r * t);
+      const t = i * dt;
+      const rawX = (R - r) * Math.cos(t) + d * Math.cos((R - r) / r * t);
+      const rawY = (R - r) * Math.sin(t) - d * Math.sin((R - r) / r * t);
+      const x = cx + cosA * rawX - sinA * rawY;
+      const y = cy + sinA * rawX + cosA * rawY;
       i === 0 ? stoneCtx.moveTo(x, y) : stoneCtx.lineTo(x, y);
     }
     stoneCtx.stroke();
