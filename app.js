@@ -1050,24 +1050,23 @@ function sculptSpirograph(clientX, clientY) {
   const totalT = 2 * Math.PI * T;
   const steps  = Math.ceil(T * 240);
   const dt     = totalT / steps;
-  const N      = SCULPT_COLORS.length;
   stoneCtx.clearRect(0, 0, rect.width, rect.height);
-  // Each color paints its own slice of the path (1/N of total steps) — true rainbow pen effect
-  stoneCtx.lineWidth   = 1.8;
-  stoneCtx.globalAlpha = 1.0;
-  SCULPT_COLORS.forEach((color, idx) => {
-    const startI = Math.floor(idx / N * steps);
-    const endI   = Math.floor((idx + 1) / N * steps) + 1;
-    stoneCtx.beginPath();
-    stoneCtx.strokeStyle = color;
-    for (let i = startI; i <= Math.min(endI, steps); i++) {
-      const t = i * dt;
-      const x = cx + (R - r) * Math.cos(t) + d * Math.cos((R - r) / r * t);
-      const y = cy + (R - r) * Math.sin(t) - d * Math.sin((R - r) / r * t);
-      i === startI ? stoneCtx.moveTo(x, y) : stoneCtx.lineTo(x, y);
+  // Draw each tiny segment with a continuously-cycling hue — true rainbow gradient along path
+  let prevX, prevY;
+  for (let i = 0; i <= steps; i++) {
+    const t = i * dt;
+    const x = cx + (R - r) * Math.cos(t) + d * Math.cos((R - r) / r * t);
+    const y = cy + (R - r) * Math.sin(t) - d * Math.sin((R - r) / r * t);
+    if (i > 0) {
+      const hue = (i / steps) * 360;
+      stoneCtx.beginPath();
+      stoneCtx.strokeStyle = 'hsl(' + hue + ',100%,55%)';
+      stoneCtx.moveTo(prevX, prevY);
+      stoneCtx.lineTo(x, y);
+      stoneCtx.stroke();
     }
-    stoneCtx.stroke();
-  });
+    prevX = x; prevY = y;
+  }
   stoneCtx.globalAlpha = 1;
   const now = performance.now();
   if (now - lastStoneHaptic > 80) { triggerHaptic('tick'); lastStoneHaptic = now; }
