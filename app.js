@@ -72,8 +72,9 @@ function triggerHaptic(type) {
        physically toggles the switch, so the OS haptic still fires on
        iOS 26.5+. The event bubbles up, so the button works normally.
    ------------------------------------------------------------------------ */
-const IS_IOS = /iP(hone|od|ad)/.test(navigator.userAgent)
-  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_IOS = /iPhone|iPod|iPad/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  || (/Mac/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 
 let iosHapticLabel = null, iosPatternTimers = [];
 
@@ -121,19 +122,28 @@ function iosPlayPattern(pattern) {
   });
 }
 
-const HAPTIC_TARGET_SELECTOR = '.tab-btn, .filter-pill, .drawer-trigger, .star-btn, .challenge-btn, .empty-cta, .tap-zone-left, .tap-zone-right, .vibe-btn, .ep-btn, .header-btn, .stealth-btn, .play-pause-btn, .player-skip-btn, .player-speed-btn, .letter-item, .podcast-show-header, .grounding-control button';
+const HAPTIC_TARGET_SELECTOR = '.tab-btn, .filter-pill, .drawer-trigger, .star-btn, .challenge-btn, .empty-cta, .tap-zone-left, .tap-zone-right, .vibe-btn, .ep-btn, .header-btn, .stealth-btn, .play-pause-btn, .player-skip-btn, .player-speed-btn, .letter-item, .podcast-show-header, .grounding-control button, .prayer-tab, .prayer-row, .author-toggle-btn, .author-pill, .stone-mode-btn, .stone-color-btn, .stone-clear-btn, .sky-loc-btn, .reader-back-btn, .book-tile';
 
 function armNativeHapticTargets() {
+  if (!IS_IOS) return;
   document.querySelectorAll(HAPTIC_TARGET_SELECTOR).forEach(el => {
-    if (el.querySelector(':scope > .ios-haptic-overlay')) return;
-    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+    // skip if already armed or element is display:none
+    if (el.dataset.hapticArmed) return;
+    if (!el.offsetParent && el.style.display === 'none') return;
+    const pos = getComputedStyle(el).position;
+    if (pos === 'static') el.style.position = 'relative';
+    // ensure no overflow:hidden clips the overlay
+    if (getComputedStyle(el).overflow === 'hidden') el.style.overflow = 'visible';
     const sw = document.createElement('input');
     sw.type = 'checkbox';
     sw.setAttribute('switch', '');
     sw.className = 'ios-haptic-overlay';
     sw.setAttribute('aria-hidden', 'true');
     sw.tabIndex = -1;
+    // prevent the toggle from stealing the event from the real button
+    sw.addEventListener('click', e => e.stopPropagation(), { passive: false });
     el.appendChild(sw);
+    el.dataset.hapticArmed = '1';
   });
 }
 
@@ -903,6 +913,7 @@ function closeLetter() { document.getElementById('letter-modal').style.display =
    13. TACTILE WORRY STONE — canvas ripples + continuous soft haptics (Pillar 3)
    ========================================================================== */
 let stoneCanvas = null, stoneCtx = null, stoneRipples = [], stoneRafId = null, lastStoneHaptic = 0, stoneInited = false, stoneSessionCounted = false;
+let stoneDrawMode = false, stoneDrawColor = '#D4AF37', stoneIsDown = false, stoneLastPt = null, stoneDrawHistory = [];
 
 function initWorryStone() {
   stoneCanvas = document.getElementById('worry-stone-canvas');
@@ -917,21 +928,107 @@ function initWorryStone() {
   if (stoneInited) return;
   stoneInited = true;
 
-  const onMove = (clientX, clientY) => {
+  const getXY = (clientX, clientY) => {
     const r = stoneCanvas.getBoundingClientRect();
-    const x = clientX - r.left, y = clientY - r.top;
-    stoneRipples.push({ x, y, radius: 4, alpha: 0.5 });
-    if (stoneRipples.length > 60) stoneRipples.shift();
-    document.getElementById('worry-stone-wrap').classList.add('touched');
-    const now = performance.now();
-    if (now - lastStoneHaptic > 70) { triggerHaptic('stone'); lastStoneHaptic = now; }
-    if (!stoneSessionCounted) { stoneSessionCounted = true; stats.stoneSessions++; awardXP('stone'); setTimeout(() => stoneSessionCounted = false, 30000); }
-    if (!stoneRafId) stoneLoop();
+    return { x: clientX - r.left, y: clientY - r.top };
   };
-  stoneCanvas.addEventListener('touchmove', e => { e.preventDefault(); const t = e.touches[0]; if (t) onMove(t.clientX, t.clientY); }, { passive: false });
-  stoneCanvas.addEventListener('mousemove', e => { if (e.buttons === 1) onMove(e.clientX, e.clientY); });
-  stoneCanvas.addEventListener('mousedown', e => onMove(e.clientX, e.clientY));
-  stoneCanvas.addEventListener('touchstart', e => { const t = e.touches[0]; if (t) onMove(t.clientX, t.clientY); }, { passive: true });
+
+  const onDown = (clientX, clientY) => {
+    stoneIsDown = true;
+    const pt = getXY(clientX, clientY);
+    document.getElementById('worry-stone-wrap').classList.add('touched');
+    if (!stoneSessionCounted) { stoneSessionCounted = true; stats.stoneSessions++; awardXP('stone'); setTimeout(() => stoneSessionCounted = false, 30000); }
+    if (stoneDrawMode) {
+      stoneDrawHistory.push({ color: stoneDrawColor, points: [pt] });
+      triggerHaptic('tick');
+    } else {
+      stoneRipples.push({ x: pt.x, y: pt.y, radius: 4, alpha: 0.5 });
+      const now = performance.now();
+      if (now - lastStoneHaptic > 70) { triggerHaptic('stone'); lastStoneHaptic = now; }
+      if (!stoneRafId) stoneLoop();
+    }
+  };
+
+  const onMove = (clientX, clientY) => {
+    if (!stoneIsDown) return;
+    const pt = getXY(clientX, clientY);
+    if (stoneDrawMode) {
+      const stroke = stoneDrawHistory[stoneDrawHistory.length - 1];
+      if (!stroke) return;
+      stroke.points.push(pt);
+      if (stroke.points.length >= 2) {
+        const prev = stroke.points[stroke.points.length - 2];
+        stoneCtx.beginPath();
+        stoneCtx.strokeStyle = stoneDrawColor;
+        stoneCtx.lineWidth = 2.8;
+        stoneCtx.lineCap = 'round';
+        stoneCtx.lineJoin = 'round';
+        stoneCtx.globalAlpha = 0.82;
+        stoneCtx.moveTo(prev.x, prev.y);
+        stoneCtx.lineTo(pt.x, pt.y);
+        stoneCtx.stroke();
+        stoneCtx.globalAlpha = 1;
+      }
+    } else {
+      stoneRipples.push({ x: pt.x, y: pt.y, radius: 4, alpha: 0.5 });
+      if (stoneRipples.length > 60) stoneRipples.shift();
+      const now = performance.now();
+      if (now - lastStoneHaptic > 70) { triggerHaptic('stone'); lastStoneHaptic = now; }
+      if (!stoneRafId) stoneLoop();
+    }
+  };
+
+  const onUp = () => { stoneIsDown = false; };
+
+  stoneCanvas.addEventListener('touchstart',  e => { const t = e.touches[0]; if (t) onDown(t.clientX, t.clientY); }, { passive: true });
+  stoneCanvas.addEventListener('touchmove',   e => { e.preventDefault(); const t = e.touches[0]; if (t) onMove(t.clientX, t.clientY); }, { passive: false });
+  stoneCanvas.addEventListener('touchend',    onUp, { passive: true });
+  stoneCanvas.addEventListener('mousedown',   e => onDown(e.clientX, e.clientY));
+  stoneCanvas.addEventListener('mousemove',   e => { if (e.buttons === 1) onMove(e.clientX, e.clientY); });
+  stoneCanvas.addEventListener('mouseup',     onUp);
+}
+
+function toggleStoneMode(mode) {
+  stoneDrawMode = mode === 'draw';
+  document.getElementById('stone-mode-ripple').classList.toggle('stone-mode-btn--active', !stoneDrawMode);
+  document.getElementById('stone-mode-draw').classList.toggle('stone-mode-btn--active', stoneDrawMode);
+  document.getElementById('stone-draw-tools').style.display = stoneDrawMode ? 'flex' : 'none';
+  stoneRipples = [];
+  if (stoneCtx) { const r = stoneCanvas.getBoundingClientRect(); stoneCtx.clearRect(0, 0, r.width, r.height); }
+  if (stoneDrawMode) _stoneRedraw();
+  triggerHaptic('tick');
+}
+
+function setStoneColor(color, btn) {
+  stoneDrawColor = color;
+  document.querySelectorAll('.stone-color-btn').forEach(b => b.classList.remove('stone-color-btn--active'));
+  btn.classList.add('stone-color-btn--active');
+  triggerHaptic('tick');
+}
+
+function clearStoneDrawing() {
+  stoneDrawHistory = [];
+  if (stoneCtx) { const r = stoneCanvas.getBoundingClientRect(); stoneCtx.clearRect(0, 0, r.width, r.height); }
+  triggerHaptic('save');
+}
+
+function _stoneRedraw() {
+  if (!stoneCtx) return;
+  const r = stoneCanvas.getBoundingClientRect();
+  stoneCtx.clearRect(0, 0, r.width, r.height);
+  stoneDrawHistory.forEach(function(stroke) {
+    if (stroke.points.length < 2) return;
+    stoneCtx.beginPath();
+    stoneCtx.strokeStyle = stroke.color;
+    stoneCtx.lineWidth = 2.8;
+    stoneCtx.lineCap = 'round';
+    stoneCtx.lineJoin = 'round';
+    stoneCtx.globalAlpha = 0.82;
+    stoneCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+    for (var i = 1; i < stroke.points.length; i++) stoneCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
+    stoneCtx.stroke();
+    stoneCtx.globalAlpha = 1;
+  });
 }
 
 function stoneLoop() {

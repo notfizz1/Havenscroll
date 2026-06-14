@@ -178,7 +178,20 @@
       <div class="oasis-drawer" id="drawer-stone">
         <button class="drawer-trigger" onclick="toggleDrawer('drawer-stone')"><span>🪨 Worry Stone</span><span class="drawer-arrow">▶</span></button>
         <div class="drawer-content">
-          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">Rest your thumb on the stone and rub slowly. Fluid ripples and soft vibrations follow your touch — a quiet anchor for restless hands.</p>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">Rest your thumb on the stone and rub slowly. Fluid ripples and soft vibrations follow your touch — or switch to Draw mode to sketch freely.</p>
+          <!-- mode toggle -->
+          <div class="stone-mode-row">
+            <button class="stone-mode-btn stone-mode-btn--active" id="stone-mode-ripple" onclick="toggleStoneMode('ripple')">〜 Ripple</button>
+            <button class="stone-mode-btn" id="stone-mode-draw" onclick="toggleStoneMode('draw')">✏ Draw</button>
+          </div>
+          <!-- draw tools (hidden in ripple mode) -->
+          <div class="stone-draw-tools" id="stone-draw-tools" style="display:none">
+            <button class="stone-color-btn stone-color-btn--active" onclick="setStoneColor('#D4AF37', this)" style="background:#D4AF37" title="Gold"></button>
+            <button class="stone-color-btn" onclick="setStoneColor('#81C784', this)" style="background:#81C784" title="Sage"></button>
+            <button class="stone-color-btn" onclick="setStoneColor('#ffffff', this)" style="background:#ffffff" title="White"></button>
+            <button class="stone-color-btn" onclick="setStoneColor('#F48FB1', this)" style="background:#F48FB1" title="Rose"></button>
+            <button class="stone-clear-btn" onclick="clearStoneDrawing()">✕ Clear</button>
+          </div>
           <div class="worry-stone-wrap" id="worry-stone-wrap">
             <canvas id="worry-stone-canvas"></canvas>
             <div class="worry-hint">Drag your finger across the stone</div>

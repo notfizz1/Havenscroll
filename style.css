@@ -763,3 +763,66 @@ body { display: flex; justify-content: center; align-items: center; background-i
   vertical-align: middle;
   white-space: nowrap;
 }
+
+/* ==========================================================================
+   14. WORRY STONE DRAW MODE CONTROLS
+   ========================================================================== */
+.stone-mode-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.stone-mode-btn {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.78rem;
+  padding: 0.4rem 0.6rem;
+  position: relative;
+  transition: all 0.15s;
+}
+.stone-mode-btn--active {
+  background: rgba(212,175,55,0.12);
+  border-color: rgba(212,175,55,0.35);
+  color: var(--accent-gold);
+}
+.stone-draw-tools {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+.stone-color-btn {
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  height: 26px;
+  padding: 0;
+  position: relative;
+  width: 26px;
+  flex-shrink: 0;
+  transition: transform 0.12s, border-color 0.12s;
+}
+.stone-color-btn--active {
+  border-color: rgba(255,255,255,0.7);
+  transform: scale(1.18);
+}
+.stone-clear-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.72rem;
+  margin-left: auto;
+  padding: 0.3rem 0.65rem;
+  position: relative;
+  transition: background 0.12s;
+}
+.stone-clear-btn:active { background: rgba(255,255,255,0.1); }
