@@ -624,7 +624,7 @@ function showBooksTab() {
   } else {
     document.getElementById('book-reader-view').style.display = 'none';
     document.getElementById('bookshelf-view').style.display = 'flex';
-    renderBookshelf();
+    loadBooksCatalog().then(renderBookshelf);
   }
 }
 
